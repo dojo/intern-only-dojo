@@ -2,6 +2,16 @@
 
 import has = require('./has');
 
+var global = (function () { return this; })();
+has.add('native-promise', (global) => {
+	return typeof global.Promise !== 'undefined';
+});
+
+// TODO: This works, but should it?
+if (has('native-promise')) {
+	return global.Promise;
+}
+
 declare var process;
 
 var queue;
@@ -176,7 +186,7 @@ class Promise {
 		return this.then(undefined, onRejected);
 	}
 
-	then(onResolved?:Function, onRejected?:Function):Promise {
+	then(onFulfilled?:Function, onRejected?:Function):Promise {
 		throw new Error('"then" has not been implemented');
 	}
 
