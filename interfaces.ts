@@ -21,22 +21,23 @@ declare var define: Define;
 
 interface IHas {
 	(feature:string):any;
-	add(feature:string, test:any, now?:boolean, force?:boolean):void;
+	add(feature:string, test:(global:any, document:Document, element:HTMLElement)=>boolean, now?:boolean, force?:boolean):void;
+	add(feature:string, test:boolean, now?:boolean, force?:boolean):void;
 	normalize(id:string, normalize:Function):string;
 	load(id:string, parentRequire:Require, loaded:Function, config?:any):void;
 }
 
 interface IHandle {
-	remove(): void;
+	remove():void;
 }
 
 interface IEvented {
-	on(type:string, listener:Function): IHandle;
-	emit(type:string, event:Object): boolean;
+	on(type:string, listener:Function):IHandle;
+	emit(type:string, event:Object):boolean;
 }
 
 interface IAroundFactory {
-	(previous:Function): Function;
+	(previous:Function):Function;
 }
 
 interface IExtensionEvent {
