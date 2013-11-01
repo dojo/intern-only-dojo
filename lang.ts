@@ -1,6 +1,6 @@
 var slice = Array.prototype.slice;
 
-function getDottedProperty(object: Object, parts: Array, create: boolean) {
+function getDottedProperty(object:Object, parts:Array, create:boolean):any {
 	var key,
 		i = 0;
 
@@ -14,7 +14,7 @@ function getDottedProperty(object: Object, parts: Array, create: boolean) {
 	return object;
 }
 
-export function setProperty(object: Object, propertyName: string, value: any): void {
+export function setProperty(object:Object, propertyName:string, value:any):void {
 	var parts = propertyName.split('.'),
 		part = parts.pop(),
 		property = getDottedProperty(object, parts, true);
@@ -25,11 +25,11 @@ export function setProperty(object: Object, propertyName: string, value: any): v
 	}
 }
 
-export function getProperty(object: Object, propertyName: string, create: boolean = false): any {
+export function getProperty(object:Object, propertyName:string, create:boolean = false):any {
 	return getDottedProperty(object, propertyName.split('.'), create);
 }
 
-function _mixin(destination: Object, source: Object): Object {
+function _mixin<T>(destination:T, source:Object):T {
 	for (var name in source) {
 		var sourceValue = source[name];
 		if (name in destination && destination[name] === sourceValue) {
@@ -42,8 +42,8 @@ function _mixin(destination: Object, source: Object): Object {
 	return destination;
 }
 
-export function mixin<T>(destination: T, ...sources: Object[]): T;
-export function mixin<T>(destination: T): T {
+export function mixin<T>(destination:T, ...sources:Object[]):T;
+export function mixin<T>(destination:T):T {
 	if (!destination) {
 		destination = <T>{};
 	}
@@ -53,7 +53,7 @@ export function mixin<T>(destination: T): T {
 	return destination;
 }
 
-export function delegate<T>(object:T, properties?:Object): T {
+export function delegate<T>(object:T, properties?:Object):T {
 	object = Object.create(object);
 	_mixin(object, properties);
 	return object;
@@ -80,7 +80,8 @@ export function partial(func:Function):Function {
 	};
 }
 
-export function deepMixin(target: any, source: any): any {
+// TODO: change this to a generic function
+export function deepMixin(target:any, source:any):any {
 	if (source && typeof source === 'object') {
 		if (Array.isArray(source)) {
 			target.length = source.length;
@@ -105,7 +106,7 @@ export function deepMixin(target: any, source: any): any {
 	return target;
 }
 
-export function deepDelegate(origin: Object, properties: Object = null): Object {
+export function deepDelegate<T>(origin:T, properties:Object = null):T {
 	var destination = delegate(origin);
 	properties = properties || null;
 
