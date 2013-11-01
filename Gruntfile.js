@@ -11,7 +11,7 @@ module.exports = function (grunt) {
 				outDir: '.',
 				options: {
 					target: 'es5',
-					module: 'commonjs'
+					module: 'amd'
 				}
 			}
 		},
@@ -26,16 +26,12 @@ module.exports = function (grunt) {
 		},
 		clean: {
 			ts: {
-				files: [{
-					expand: true,
-					src: [ '**/*.ts', '!node_modules/**/*.ts' ],
-					ext: '.js'
-				}]
+				src: [ '**/*.js', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js' ]
 			}
 		}
 	});
 
-	grunt.registerTask('default', [ 'watch:ts' ]);
+	grunt.registerTask('default', [ 'ts:dev', 'watch:ts' ]);
 
 	var changedFiles = {},
 		onChange = grunt.util._.debounce(function () {
