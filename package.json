@@ -1,0 +1,10 @@
+{
+  "name": "core",
+  "version": "0.0.1",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-ts": "~1.4.0",
+    "grunt-contrib-watch": "~0.5.3"
+  }
+}
