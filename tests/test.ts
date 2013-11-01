@@ -1,4 +1,5 @@
 import Promise = require('./Promise');
+import Evented = require('./Evented');
 
 var resolve, reject,
 	promise = new Promise((_resolve) => {
@@ -23,3 +24,7 @@ Promise.all({ one: promise, two: promise1 }).then((results) => {
 });
 
 resolve(4);
+
+class MyEvented extends Evented {}
+
+var me = new MyEvented();
