@@ -26,12 +26,13 @@ module.exports = function (grunt) {
 		},
 		clean: {
 			ts: {
-				src: [ '**/*.js', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js' ]
+				src: [ '**/*.js', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js', '!loader.js' ]
 			}
 		}
 	});
 
 	grunt.registerTask('default', [ 'ts:dev', 'watch:ts' ]);
+	grunt.registerTask('build', [ 'ts:dev' ]);
 
 	var changedFiles = {},
 		onChange = grunt.util._.debounce(function () {
