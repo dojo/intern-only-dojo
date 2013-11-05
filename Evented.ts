@@ -12,7 +12,8 @@ class Evented implements IEvented {
 		});
 	}
 
-	emit(type:string, event:Object):boolean {
+	emit(type:string, ...args:any[]):boolean;
+	emit(type:string):boolean {
 		type = '__on' + type;
 		var args = slice.call(arguments, 1);
 		if (this[type]) {

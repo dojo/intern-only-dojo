@@ -131,6 +131,10 @@ export function before(target:Object, methodName:string, advice:Function): IHand
 	return advise(getDispatcher(target, methodName), 'before', advice);
 }
 
+export interface IAroundFactory {
+	(previous:Function):Function;
+}
+
 export function around(target:Object, methodName:string, advice:IAroundFactory): IHandle {
 	var dispatcher = getDispatcher(target, methodName),
 		previous = dispatcher.around,

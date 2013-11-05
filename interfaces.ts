@@ -9,6 +9,8 @@ interface Require {
 		(feature:string):any;
 		add(feature:string, test:any, now?:boolean, force?:boolean):void;
 	}
+	toUrl: (moduleId:string)=>string;
+	nodeRequire: (moduleId:string)=>any;
 }
 declare var require: Require;
 
@@ -19,12 +21,19 @@ interface Define {
 }
 declare var define: Define;
 
-interface IHas {
+interface ILoaderPlugin {
+	normalize?(id:string, normalize:Function):string;
+	load(id:string, parentRequire:Require, loaded:Function, config?:any):void;
+}
+
+interface ILoaderFunctionPlugin extends ILoaderPlugin {
+	(...args:any[]):any;
+}
+
+interface IHas extends ILoaderFunctionPlugin {
 	(feature:string):any;
 	add(feature:string, test:(global:any, document:Document, element:HTMLElement)=>boolean, now?:boolean, force?:boolean):void;
 	add(feature:string, test:boolean, now?:boolean, force?:boolean):void;
-	normalize(id:string, normalize:Function):string;
-	load(id:string, parentRequire:Require, loaded:Function, config?:any):void;
 }
 
 interface IHandle {
@@ -33,11 +42,7 @@ interface IHandle {
 
 interface IEvented {
 	on(type:string, listener:Function):IHandle;
-	emit(type:string, event:Object):boolean;
-}
-
-interface IAroundFactory {
-	(previous:Function):Function;
+	emit(type:string, ...args:any[]):boolean;
 }
 
 interface IExtensionEvent {
