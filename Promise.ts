@@ -31,45 +31,51 @@ else {
 	};
 }
 
-function makePromiseReactionFunction(promise:Promise, resolve:Function, reject:Function, handler:Function):Function {
+interface IDeferred {
+	promise: Promise;
+	resolve: (value:any) => void;
+	reject: (reason:any) => void;
+}
+
+function getDeferred():IDeferred {
+	var deferred = <IDeferred>{};
+	deferred.promise = new Promise((resolve, reject) => {
+		deferred.resolve = resolve;
+		deferred.reject = reject;
+	});
+
+	return deferred;
+}
+
+function makePromiseReactionFunction(deferred:IDeferred, handler:Function):Function {
 	function F(value) {
 		var handlerResult;
 		try {
 			handlerResult = handler(value);
 		}
 		catch (handlerResultE) {
-			reject(handlerResultE);
+			deferred.reject(handlerResultE);
 			return;
 		}
 
 		if (!isObject(handlerResult)) {
-			resolve(handlerResult);
+			deferred.resolve(handlerResult);
 			return;
 		}
 
-		if (handlerResult === promise) {
-			reject(new TypeError('Tried to resolve a promise with itself'));
-		}
-
-		var then;
-		try {
-			then = handlerResult.then;
-		}
-		catch (thenE) {
-			reject(thenE);
-			return;
-		}
-
-		if (typeof then !== 'function') {
-			resolve(handlerResult);
-			return;
+		if (handlerResult === deferred.promise) {
+			deferred.reject(new TypeError('Tried to resolve a promise with itself'));
 		}
 
 		try {
-			then.call(handlerResult, resolve, reject);
+			if (typeof handlerResult.then !== 'function') {
+				deferred.resolve(handlerResult);
+				return;
+			}
+			handlerResult.then(deferred.resolve, deferred.reject);
 		}
 		catch (thenResultE) {
-			reject(thenResultE);
+			deferred.reject(thenResultE);
 		}
 	}
 	return F;
@@ -80,22 +86,18 @@ function thenableToPromise(value) {
 		return value;
 	}
 
-	var reject, resolve,
-		promise = new Promise((_reject, _resolve) => {
-			reject = _reject;
-			resolve = _resolve;
-		});
+	var deferred = getDeferred();
 
 	try {
 		if (typeof value.then !== 'function') {
 			return value;
 		}
-		return value.then(resolve, reject);
+		return value.then(deferred.resolve, deferred.reject);
 	}
 	catch (e) {
-		reject(e);
+		deferred.reject(e);
 	}
-	return promise;
+	return deferred.promise;
 }
 
 function isObject(value) {
@@ -109,7 +111,7 @@ class Promise {
 			rejectReactions = [],
 			result;
 
-		function _resolver(reactions, newStatus, newResult) {
+		function processReactions(reactions, newStatus, newResult) {
 			if (status !== 'unresolved') {
 				return;
 			}
@@ -123,8 +125,8 @@ class Promise {
 			});
 			reactions = undefined;
 		}
-		var _resolve = _resolver.bind(null, resolveReactions, 'has-resolution'),
-			_reject = _resolver.bind(null, rejectReactions, 'has-rejection');
+		var _resolve = processReactions.bind(null, resolveReactions, 'has-resolution'),
+			_reject = processReactions.bind(null, rejectReactions, 'has-rejection');
 
 		try {
 			resolver(_resolve, _reject);
@@ -134,23 +136,19 @@ class Promise {
 		}
 
 		this.then = (onFulfilled?:(resolution:any)=>any, onRejected?:(reason:any)=>any):Promise => {
-			var resolve, reject,
-				promise = new Promise((_resolve, _reject) => {
-					resolve = _resolve;
-					reject = _reject;
-				});
+			var deferred = getDeferred();
 
-			var rejectionHandler = reject;
+			var rejectionHandler = deferred.reject;
 			if (typeof onRejected === 'function') {
 				rejectionHandler = onRejected;
 			}
 
-			var fulfillmentHandler = resolve;
+			var fulfillmentHandler = deferred.resolve;
 			if (typeof onFulfilled === 'function') {
 				fulfillmentHandler = onFulfilled;
 			}
 
-			var resolutionReaction = makePromiseReactionFunction(promise, resolve, reject, (value) => {
+			var resolutionReaction = makePromiseReactionFunction(deferred, (value) => {
 				var coerced = thenableToPromise(value);
 
 				if (coerced instanceof Promise) {
@@ -159,7 +157,7 @@ class Promise {
 
 				return fulfillmentHandler(value);
 			});
-			var rejectionReaction = makePromiseReactionFunction(promise, resolve, reject, rejectionHandler);
+			var rejectionReaction = makePromiseReactionFunction(deferred, rejectionHandler);
 
 			if (status === 'unresolved') {
 				resolveReactions.push(resolutionReaction);
@@ -178,7 +176,7 @@ class Promise {
 				});
 			}
 
-			return promise;
+			return deferred.promise;
 		};
 	}
 
@@ -206,12 +204,7 @@ class Promise {
 
 			nextPromise.then((index, value) => {
 				try {
-					Object.defineProperty(values, index, {
-						value: value,
-						writable:true,
-						enumerable: true,
-						configurable: true
-					});
+					values[index] = value;
 				}
 				catch (e) {
 					reject(e);
