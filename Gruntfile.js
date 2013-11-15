@@ -26,7 +26,7 @@ module.exports = function (grunt) {
 		},
 		clean: {
 			ts: {
-				src: [ '**/*.js', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js', '!loader.js' ]
+				src: [ '**/*.js', '**/*.js.map', '**/*.d.ts', '!node_modules/**/*', '!Gruntfile.js', '!loader.js' ]
 			}
 		}
 	});
