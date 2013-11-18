@@ -60,3 +60,29 @@ interface IOn {
 	emit(target:HTMLElement, type:string, event:any):boolean;
 	emit(target:IEvented, type:string, event:any):boolean;
 }
+
+interface IPromiseFunction<T> {
+	(value:T):void;
+	(promise:IPromise<T>):void;
+}
+interface IPromiseResolver<T> {
+	(resolve:IPromiseFunction<T>, reject:IPromiseFunction<any>):void;
+}
+
+interface IPromise<T> {
+	catch<U>(onRejected:(reason:any)=>U):IPromise<U>;
+	catch<U>(onRejected:(reason:any)=>IPromise<U>):IPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):IPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):IPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
+}
+var IPromise: {
+	new <T>(resolver:IPromiseResolver<T>);
+	all(iterable:any):IPromise<any[]>;
+	cast<T>(value:T):IPromise<T>;
+	cast<T>(value:IPromise<T>):IPromise<T>;
+	race(iterable:any):IPromise<any>;
+	reject<T>(reason:any):IPromise<T>;
+	resolve<T>(value:T):IPromise<T>;
+};

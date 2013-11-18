@@ -31,15 +31,15 @@ else {
 	};
 }
 
-interface IDeferred {
-	promise: Promise;
-	resolve: (value:any) => void;
+interface IDeferred<T> {
+	promise: Promise<T>;
+	resolve: (value:T) => void;
 	reject: (reason:any) => void;
 }
 
-function getDeferred():IDeferred {
-	var deferred = <IDeferred>{};
-	deferred.promise = new Promise((resolve, reject) => {
+function getDeferred<T>():IDeferred<T> {
+	var deferred = <IDeferred<T>>{};
+	deferred.promise = new Promise<T>((resolve, reject) => {
 		deferred.resolve = resolve;
 		deferred.reject = reject;
 	});
@@ -47,30 +47,30 @@ function getDeferred():IDeferred {
 	return deferred;
 }
 
-function makePromiseReactionFunction(deferred:IDeferred, handler:Function):Function {
-	function F(value) {
+interface IReactionFunction<T> {
+	(value:T):void;
+}
+function makePromiseReactionFunction<T>(deferred:IDeferred<T>, handler:Function):IReactionFunction<T> {
+	function F(value:T):void {
 		var handlerResult;
 		try {
 			handlerResult = handler(value);
 		}
 		catch (handlerResultE) {
-			deferred.reject(handlerResultE);
-			return;
-		}
-
-		if (!isObject(handlerResult)) {
-			deferred.resolve(handlerResult);
-			return;
+			return deferred.reject(handlerResultE);
 		}
 
 		if (handlerResult === deferred.promise) {
-			deferred.reject(new TypeError('Tried to resolve a promise with itself'));
+			return deferred.reject(new TypeError('Tried to resolve a promise with itself'));
+		}
+
+		if (!isObject(handlerResult)) {
+			return deferred.resolve(handlerResult);
 		}
 
 		try {
 			if (typeof handlerResult.then !== 'function') {
-				deferred.resolve(handlerResult);
-				return;
+				return deferred.resolve(handlerResult);
 			}
 			handlerResult.then(deferred.resolve, deferred.reject);
 		}
@@ -81,12 +81,15 @@ function makePromiseReactionFunction(deferred:IDeferred, handler:Function):Funct
 	return F;
 }
 
-function thenableToPromise(value) {
+var thenableToPromise: {
+	<T>(value:IPromise<T>):Promise<T>;
+	<T>(value:T):Promise<T>;
+} = function thenableToPromise<T>(value:any):Promise<T> {
 	if (value instanceof Promise || !isObject(value)) {
 		return value;
 	}
 
-	var deferred = getDeferred();
+	var deferred = getDeferred<T>();
 
 	try {
 		if (typeof value.then !== 'function') {
@@ -98,21 +101,21 @@ function thenableToPromise(value) {
 		deferred.reject(e);
 	}
 	return deferred.promise;
-}
+};
 
-function isObject(value) {
+function isObject(value:any):boolean {
 	return (typeof value === 'object' && value !== null) || typeof value === 'function';
 }
 
-class Promise {
-	constructor(resolver:(resolve:(resolution:any)=>any, reject:(reason:any)=>any)=>void) {
-		var status = 'unresolved',
-			resolveReactions = [],
-			rejectReactions = [],
+class Promise<T> implements IPromise<T> {
+	constructor(resolver:IPromiseResolver<T>) {
+		var status = 'pending',
+			resolveReactions:Array<IReactionFunction<T>> = [],
+			rejectReactions:Array<IReactionFunction<T>> = [],
 			result;
 
 		function processReactions(reactions, newStatus, newResult) {
-			if (status !== 'unresolved') {
+			if (status !== 'pending') {
 				return;
 			}
 			resolveReactions = rejectReactions = undefined;
@@ -135,20 +138,36 @@ class Promise {
 			_reject(e);
 		}
 
-		this.then = (onFulfilled?:(resolution:any)=>any, onRejected?:(reason:any)=>any):Promise => {
-			var deferred = getDeferred();
+		var then: {
+			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):IPromise<U>;
+			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
+			<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):IPromise<U>;
+			<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
+		} = function then<U>(onFulfilled?:any, onRejected?:any):Promise<U> {
+			var deferred = getDeferred<U>(),
+				promise = this;
 
-			var rejectionHandler = deferred.reject;
+			var rejectionHandler = (error) => {
+				throw error;
+			};
 			if (typeof onRejected === 'function') {
 				rejectionHandler = onRejected;
 			}
 
-			var fulfillmentHandler = deferred.resolve;
+			var fulfillmentHandler = (value) => {
+				return value;
+			};
 			if (typeof onFulfilled === 'function') {
 				fulfillmentHandler = onFulfilled;
 			}
 
 			var resolutionReaction = makePromiseReactionFunction(deferred, (value) => {
+				if (value === promise) {
+					return rejectionHandler(
+						new TypeError('Tried to resolve a promise with itself')
+					);
+				}
+
 				var coerced = thenableToPromise(value);
 
 				if (coerced instanceof Promise) {
@@ -159,7 +178,7 @@ class Promise {
 			});
 			var rejectionReaction = makePromiseReactionFunction(deferred, rejectionHandler);
 
-			if (status === 'unresolved') {
+			if (status === 'pending') {
 				resolveReactions.push(resolutionReaction);
 				rejectReactions.push(rejectionReaction);
 			}
@@ -178,17 +197,24 @@ class Promise {
 
 			return deferred.promise;
 		};
+		this.then = then;
 	}
 
-	catch(onRejected:Function):Promise {
-		return this.then(undefined, onRejected);
+	catch<U>(onRejected:(reason:any)=>U):Promise<U>;
+	catch<U>(onRejected:(reason:any)=>IPromise<U>):Promise<U>;
+	catch<U>(onRejected:(reason:any)=>any):Promise<U> {
+		return this.then<U>(undefined, onRejected);
 	}
 
-	then(onFulfilled?:Function, onRejected?:Function):Promise {
+	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):Promise<U>;
+	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>IPromise<U>):Promise<U>;
+	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):Promise<U>;
+	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):Promise<U>;
+	then<U>(onFulfilled?:(value:T)=>any, onRejected?:(reason:any)=>any):Promise<U> {
 		throw new Error('"then" has not been implemented');
 	}
 
-	static all(iterable:any):Promise {
+	static all(iterable:any):Promise<any[]> {
 		var resolve, reject,
 			promise = new Promise((_resolve, _reject) => {
 				resolve = _resolve;
@@ -234,19 +260,21 @@ class Promise {
 		return promise;
 	}
 
-	static cast(value:any):Promise {
+	static cast<T>(value:T):Promise<T>;
+	static cast<T>(value:IPromise<T>):Promise<T>;
+	static cast<T>(value:any):Promise<T> {
 		if (value instanceof Promise) {
 			return value;
 		}
-		return new Promise((resolve) => {
+		return new Promise<T>((resolve) => {
 			resolve(value);
 		});
 	}
 
-	static race(iterable:any):Promise {
+	static race(iterable:any):Promise<any> {
 		return new Promise((resolve, reject) => {
-			function thenNext(value) {
-				var nextPromise = Promise.cast(value);
+			function thenNext<T>(value:T) {
+				var nextPromise = Promise.cast<T>(value);
 				nextPromise.then(resolve, reject);
 			}
 
@@ -261,14 +289,14 @@ class Promise {
 		});
 	}
 
-	static reject(reason:any):Promise {
-		return new Promise((resolve, reject) => {
+	static reject<T>(reason:any):Promise<T> {
+		return new Promise<T>((resolve, reject) => {
 			reject(reason);
 		});
 	}
 
-	static resolve(value:any):Promise {
-		return new Promise((resolve, reject) => {
+	static resolve<T>(value:T):Promise<T> {
+		return new Promise<T>((resolve, reject) => {
 			resolve(value);
 		});
 	}
