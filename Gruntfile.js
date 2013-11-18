@@ -4,10 +4,11 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 
+	var defaultSourceFiles = [ '**/*.ts', '!node_modules/**/*.ts', '!interfaces.ts' ];
 	grunt.initConfig({
 		ts: {
 			dev: {
-				src: [ '**/*.ts', '!node_modules/**/*.ts', '!interfaces.ts' ],
+				src: defaultSourceFiles.slice(0),
 				outDir: '.',
 				options: {
 					target: 'es5',
@@ -50,9 +51,8 @@ module.exports = function (grunt) {
 
 	var changedFiles = {},
 		onChange = grunt.util._.debounce(function (all) {
-			if (!changedFiles['interfaces.ts']) {
-				grunt.config('ts.dev.src', Object.keys(changedFiles));
-			}
+			var src = changedFiles['interfaces.ts'] ? defaultSourceFiles.slice(0) : Object.keys(changedFiles);
+			grunt.config('ts.dev.src', src);
 			changedFiles = {};
 		}, 200);
 	grunt.event.on('watch', function (action, filepath) {
