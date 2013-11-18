@@ -86,3 +86,7 @@ var IPromise: {
 	reject<T>(reason:any):IPromise<T>;
 	resolve<T>(value:T):IPromise<T>;
 };
+
+interface IRegistryMatcher {
+	(...args:any[]):boolean;
+}
