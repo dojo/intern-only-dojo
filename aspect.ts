@@ -4,7 +4,7 @@ var nextId = 0;
 
 interface IAdvised {
 	id?: number;
-	advice: Function
+	advice: Function;
 	previous?: IAdvised;
 	next?: IAdvised;
 	receiveArguments?: boolean;
@@ -12,13 +12,13 @@ interface IAdvised {
 
 interface IDispatcher {
 	(): any;
-	target: Object;
+	target: any;
 	before?: IAdvised;
 	around?: IAdvised;
 	after?: IAdvised;
 }
 
-function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArguments?:boolean): IHandle {
+function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArguments?:boolean):IHandle {
 	var previous = dispatcher[type],
 		advised = <IAdvised>{
 			id: nextId++,
@@ -74,7 +74,7 @@ function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArg
 	};
 }
 
-function getDispatcher(target:Object, methodName:string): IDispatcher {
+function getDispatcher(target:any, methodName:string):IDispatcher {
 	var existing = target[methodName],
 		dispatcher;
 
@@ -127,7 +127,7 @@ function getDispatcher(target:Object, methodName:string): IDispatcher {
 	return dispatcher;
 }
 
-export function before(target:Object, methodName:string, advice:Function): IHandle {
+export function before(target:any, methodName:string, advice:Function):IHandle {
 	return advise(getDispatcher(target, methodName), 'before', advice);
 }
 
@@ -135,7 +135,7 @@ export interface IAroundFactory {
 	(previous:Function):Function;
 }
 
-export function around(target:Object, methodName:string, advice:IAroundFactory): IHandle {
+export function around(target:any, methodName:string, advice:IAroundFactory):IHandle {
 	var dispatcher = getDispatcher(target, methodName),
 		previous = dispatcher.around,
 		advised = advice(() => {
@@ -161,9 +161,9 @@ export function around(target:Object, methodName:string, advice:IAroundFactory):
 	};
 }
 
-export function after(target:Object, methodName:string, advice:Function): IHandle {
+export function after(target:any, methodName:string, advice:Function):IHandle {
 	return advise(getDispatcher(target, methodName), 'after', advice);
 }
-export function on(target:Object, methodName:string, advice:Function): IHandle {
+export function on(target:any, methodName:string, advice:Function):IHandle {
 	return advise(getDispatcher(target, methodName), 'after', advice, true);
 }
