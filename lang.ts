@@ -1,6 +1,6 @@
 var slice = Array.prototype.slice;
 
-function getDottedProperty(object:Object, parts:Array, create:boolean):any {
+function getDottedProperty(object:any, parts:Array<string>, create:boolean):any {
 	var key,
 		i = 0;
 
@@ -14,7 +14,7 @@ function getDottedProperty(object:Object, parts:Array, create:boolean):any {
 	return object;
 }
 
-export function setProperty(object:Object, propertyName:string, value:any):void {
+export function setProperty(object:any, propertyName:string, value:any):void {
 	var parts = propertyName.split('.'),
 		part = parts.pop(),
 		property = getDottedProperty(object, parts, true);
@@ -25,11 +25,11 @@ export function setProperty(object:Object, propertyName:string, value:any):void 
 	}
 }
 
-export function getProperty(object:Object, propertyName:string, create:boolean = false):any {
+export function getProperty(object:any, propertyName:string, create:boolean = false):any {
 	return getDottedProperty(object, propertyName.split('.'), create);
 }
 
-function _mixin<T>(destination:T, source:Object):T {
+function _mixin<T>(destination:T, source:any):T {
 	for (var name in source) {
 		var sourceValue = source[name];
 		if (name in destination && destination[name] === sourceValue) {
@@ -42,7 +42,7 @@ function _mixin<T>(destination:T, source:Object):T {
 	return destination;
 }
 
-export function mixin<T>(destination:T, ...sources:Object[]):T;
+export function mixin<T>(destination:T, ...sources:any[]):T;
 export function mixin<T>(destination:T):T {
 	if (!destination) {
 		destination = <T>{};
@@ -53,38 +53,37 @@ export function mixin<T>(destination:T):T {
 	return destination;
 }
 
-export function delegate<T>(object:T, properties?:Object):T {
+export function delegate<T>(object:T, properties?:any):T {
 	object = Object.create(object);
 	_mixin(object, properties);
 	return object;
 }
 
-export function bind<T>(context:Object, method:T, ...extra:any[]): T;
-export function bind(context:Object, method:string, ...extra:any[]): Function;
-export function bind(context:any, method:any): Function {
-	var extra = slice.call(arguments, 2);
-	if (typeof method === 'string') {
-		// late binding
-		return function () {
-			return context[method].apply(context, extra.concat(slice.call(arguments)));
-		};
+var _bind = Function.prototype.bind;
+export function bind<T extends Function>(context:any, func:Function, ...extra:any[]):T;
+export function bind<T extends Function>(context:any, method:string, ...extra:any[]):T;
+export function bind(context:any, func:any):any {
+	if (typeof func === 'function') {
+		return _bind.apply(func, [context].concat(slice.call(arguments, 2)));
 	}
-	return method.bind.apply(method, [context].concat(extra));
+	var extra = slice.call(arguments, 2);
+	return function () {
+		return context[func].apply(context, extra.concat(slice.call(arguments)));
+	};
 }
 
-export function partial<T>(func:T, ...extra:any[]):T;
-export function partial(func:Function):Function {
+export function partial<T extends Function>(func:Function, ...extra:any[]):T;
+export function partial(func:Function):any {
 	var extra = slice.call(arguments, 1);
 	return function () {
 		return func.apply(this, extra.concat(slice.call(arguments)));
 	};
 }
 
-// TODO: change this to a generic function
-export function deepMixin(target:any, source:any):any {
+export function deepMixin<T>(target:T, source:any):T {
 	if (source && typeof source === 'object') {
 		if (Array.isArray(source)) {
-			target.length = source.length;
+			(<any>target).length = source.length;
 		}
 		for (var name in source) {
 			var targetValue = target[name],
@@ -106,7 +105,7 @@ export function deepMixin(target:any, source:any):any {
 	return target;
 }
 
-export function deepDelegate<T>(origin:T, properties:Object = null):T {
+export function deepDelegate<T>(origin:T, properties:any = null):T {
 	var destination = delegate(origin);
 	properties = properties || null;
 
