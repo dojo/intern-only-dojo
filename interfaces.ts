@@ -77,15 +77,6 @@ interface IPromise<T> {
 	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):IPromise<U>;
 	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
 }
-var IPromise: {
-	new <T>(resolver:IPromiseResolver<T>);
-	all(iterable:any):IPromise<any[]>;
-	cast<T>(value:T):IPromise<T>;
-	cast<T>(value:IPromise<T>):IPromise<T>;
-	race(iterable:any):IPromise<any>;
-	reject<T>(reason:any):IPromise<T>;
-	resolve<T>(value:T):IPromise<T>;
-};
 
 interface IRegistryMatcher {
 	(...args:any[]):boolean;
