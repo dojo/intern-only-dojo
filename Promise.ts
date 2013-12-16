@@ -6,35 +6,76 @@ var global = (function () { return this; })();
 has.add('native-promise', (global) => {
 	return typeof global.Promise !== 'undefined';
 });
+has.add('dom-mutationobserver', (global) => {
+	if (!has('host-browser')) {
+		return;
+	}
+	return !!(global.MutationObserver || global.WebKitMutationObserver);
+});
 
 // TODO: This works, but should it?
 if (has('native-promise')) {
-	return global.Promise;
+	return <{
+		new <T>(resolver:IPromiseResolver<T>);
+		all(iterable:any):IPromise<any[]>;
+		cast<T>(value:T):IPromise<T>;
+		cast<T>(value:IPromise<T>):IPromise<T>;
+		race(iterable:any):IPromise<any>;
+		reject<T>(reason:any):IPromise<T>;
+		resolve<T>(value:T):IPromise<T>;
+	}>global.Promise;
 }
 
 declare var process;
 
-var queue;
+var queueMicrotask,
+	bind = Function.prototype.bind;
 
 if (has('host-node')) {
-	queue = (func:Function) => {
-		process.nextTick(() => {
-			func();
-		});
+	queueMicrotask = (microtask:Function, argumentsList:Array<any>) => {
+		process.nextTick(bind.apply(microtask, [undefined].concat(argumentsList)));;
 	};
 }
+else if (has('dom-mutationobserver')) {
+	queueMicrotask = (function () {
+		var MutationObserver = this.MutationObserver || this.WebKitMutationObserver,
+			callbacks = [];
+
+		var observer = new MutationObserver(() => {
+			var callback = callbacks.shift();
+			if (callback) {
+				callback();
+			}
+			if (callbacks.length) {
+				element.setAttribute('drainQueue', 'drainQueue');
+			}
+		});
+
+		var element = document.createElement('div');
+		observer.observe(element, { attributes: true });
+
+		// Chrome Memory Leak: https://bugs.webkit.org/show_bug.cgi?id=93661
+		this.addEventListener('unload', () => {
+			observer.disconnect();
+			observer = element = null;
+		});
+
+		return (microtask:Function, argumentsList:Array<any>) => {
+			callbacks.push(bind.apply(microtask, [undefined].concat(argumentsList)));
+			element.setAttribute('drainQueue', 'drainQueue');
+		};
+	})();
+}
 else {
-	queue = (func:Function) => {
-		setTimeout(() => {
-			func();
-		}, 0);
+	queueMicrotask = (microtask:Function, argumentsList:Array<any>) => {
+		setTimeout(bind.apply(microtask, [undefined].concat(argumentsList)), 0);
 	};
 }
 
 interface IDeferred<T> {
-	promise: Promise<T>;
-	resolve: (value:T) => void;
-	reject: (reason:any) => void;
+	promise:Promise<T>;
+	resolve:(value:T)=>void;
+	reject:(reason:any)=>void;
 }
 
 function getDeferred<T>():IDeferred<T> {
@@ -47,74 +88,88 @@ function getDeferred<T>():IDeferred<T> {
 	return deferred;
 }
 
-interface IReactionFunction<T> {
-	(value:T):void;
+interface IResolutionHandler<T> {
+	(value:T):T;
+	(value:IPromise<T>):IPromise<T>;
 }
-function makePromiseReactionFunction<T>(deferred:IDeferred<T>, handler:Function):IReactionFunction<T> {
-	function F(value:T):void {
-		var handlerResult;
-		try {
-			handlerResult = handler(value);
-		}
-		catch (handlerResultE) {
-			return deferred.reject(handlerResultE);
-		}
-
-		if (handlerResult === deferred.promise) {
-			return deferred.reject(new TypeError('Tried to resolve a promise with itself'));
+function makeResolutionHandler<T>(promise:IPromise<any>, fulfillmentHandler:any, rejectionHandler:any):IResolutionHandler<T> {
+	function F(value:any):any {
+		if (value === promise) {
+			return rejectionHandler.call(
+				undefined,
+				new TypeError('Tried to resolve a promise with itself')
+			);
 		}
 
-		if (!isObject(handlerResult)) {
-			return deferred.resolve(handlerResult);
-		}
-
-		try {
-			if (typeof handlerResult.then !== 'function') {
-				return deferred.resolve(handlerResult);
+		if (value && typeof value === 'object' && typeof value.then === 'function') {
+			if (value instanceof Promise) {
+				return value.then(fulfillmentHandler, rejectionHandler);
 			}
-			handlerResult.then(deferred.resolve, deferred.reject);
+
+			var deferred = getDeferred<T>();
+			try {
+				value.then(deferred.resolve, deferred.reject);
+			}
+			catch (e) {
+				deferred.reject(e);
+			}
+			return deferred.promise.then(fulfillmentHandler, rejectionHandler);
 		}
-		catch (thenResultE) {
-			deferred.reject(thenResultE);
+		else {
+			return fulfillmentHandler(value);
 		}
 	}
 	return F;
 }
 
-var thenableToPromise: {
-	<T>(value:IPromise<T>):Promise<T>;
-	<T>(value:T):Promise<T>;
-} = function thenableToPromise<T>(value:any):Promise<T> {
-	if (value instanceof Promise || !isObject(value)) {
-		return value;
-	}
+interface IReaction {
+	deferred:IDeferred<any>;
+	handler:(value:any)=>any;
+}
 
-	var deferred = getDeferred<T>();
+function executePromiseReaction(reaction:IReaction, argument:any) {
+	var deferred = reaction.deferred,
+		handler = reaction.handler,
+		handlerResult;
 
 	try {
-		if (typeof value.then !== 'function') {
-			return value;
-		}
-		return value.then(deferred.resolve, deferred.reject);
+		handlerResult = handler.call(undefined, argument);
 	}
-	catch (e) {
-		deferred.reject(e);
+	catch (handlerResultError) {
+		return deferred.reject.call(undefined, handlerResultError);
 	}
-	return deferred.promise;
-};
+
+	if (handlerResult === deferred.promise) {
+		return deferred.reject.call(undefined, new TypeError('Tried to resolve a promise with itself!'));
+	}
+
+	if (typeof handlerResult === 'object' && handlerResult && typeof handlerResult.then === 'function') {
+		handlerResult.then(deferred.resolve, deferred.reject);
+	}
+	else {
+		return deferred.resolve.call(undefined, handlerResult);
+	}
+}
 
 function isObject(value:any):boolean {
 	return (typeof value === 'object' && value !== null) || typeof value === 'function';
 }
 
+var identity = (value:any):any => {
+	return value;
+};
+var errorIdentity = (error:any):void => {
+	throw error;
+};
+
 class Promise<T> implements IPromise<T> {
 	constructor(resolver:IPromiseResolver<T>) {
 		var status = 'pending',
-			resolveReactions:Array<IReactionFunction<T>> = [],
-			rejectReactions:Array<IReactionFunction<T>> = [],
+			resolveReactions:Array<IReaction> = [],
+			rejectReactions:Array<IReaction> = [],
 			result;
 
-		function processReactions(reactions, newStatus, newResult) {
+		function triggerReactions(reactions, newStatus, newResult) {
 			if (status !== 'pending') {
 				return;
 			}
@@ -122,14 +177,12 @@ class Promise<T> implements IPromise<T> {
 			status = newStatus;
 			result = newResult;
 			reactions.forEach((reaction) => {
-				queue(() => {
-					reaction(result);
-				});
+				queueMicrotask(executePromiseReaction, [reaction, newResult]);
 			});
 			reactions = undefined;
 		}
-		var _resolve = processReactions.bind(null, resolveReactions, 'has-resolution'),
-			_reject = processReactions.bind(null, rejectReactions, 'has-rejection');
+		var _resolve = triggerReactions.bind(undefined, resolveReactions, 'has-resolution'),
+			_reject = triggerReactions.bind(undefined, rejectReactions, 'has-rejection');
 
 		try {
 			resolver(_resolve, _reject);
@@ -144,55 +197,37 @@ class Promise<T> implements IPromise<T> {
 			<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):IPromise<U>;
 			<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
 		} = function then<U>(onFulfilled?:any, onRejected?:any):Promise<U> {
-			var deferred = getDeferred<U>(),
-				promise = this;
+			var promise = this,
+				deferred = getDeferred<U>();
 
-			var rejectionHandler = (error) => {
-				throw error;
-			};
+			var rejectionHandler = errorIdentity;
 			if (typeof onRejected === 'function') {
 				rejectionHandler = onRejected;
 			}
 
-			var fulfillmentHandler = (value) => {
-				return value;
-			};
+			var fulfillmentHandler = identity;
 			if (typeof onFulfilled === 'function') {
 				fulfillmentHandler = onFulfilled;
 			}
 
-			var resolutionReaction = makePromiseReactionFunction(deferred, (value) => {
-				if (value === promise) {
-					return rejectionHandler(
-						new TypeError('Tried to resolve a promise with itself')
-					);
-				}
-
-				var coerced = thenableToPromise(value);
-
-				if (coerced instanceof Promise) {
-					return coerced.then(fulfillmentHandler, rejectionHandler);
-				}
-
-				return fulfillmentHandler(value);
-			});
-			var rejectionReaction = makePromiseReactionFunction(deferred, rejectionHandler);
+			var resolutionReaction = {
+					deferred: deferred,
+					handler: makeResolutionHandler<U>(promise, fulfillmentHandler, rejectionHandler)
+				},
+				rejectionReaction = {
+					deferred: deferred,
+					handler: rejectionHandler
+				};
 
 			if (status === 'pending') {
 				resolveReactions.push(resolutionReaction);
 				rejectReactions.push(rejectionReaction);
+			} 
+			else if (status === 'has-resolution') {
+				queueMicrotask(executePromiseReaction, [resolutionReaction, result]);
 			}
-
-			if (status === 'has-resolution') {
-				queue(() => {
-					resolutionReaction(result);
-				});
-			}
-
-			if (status === 'has-rejection') {
-				queue(() => {
-					rejectionReaction(result);
-				});
+			else if (status === 'has-rejection') {
+				queueMicrotask(executePromiseReaction, [rejectionReaction, result]);
 			}
 
 			return deferred.promise;
@@ -228,7 +263,7 @@ class Promise<T> implements IPromise<T> {
 		function thenNext(value) {
 			var nextPromise = Promise.cast(value);
 
-			nextPromise.then((index, value) => {
+			nextPromise.then(((index, value) => {
 				try {
 					values[index] = value;
 				}
@@ -242,7 +277,7 @@ class Promise<T> implements IPromise<T> {
 				if (count === 0) {
 					resolve(values);
 				}
-			}.bind(null, index), reject);
+			}).bind(null, index), reject);
 
 			index += 1;
 			count += 1;
