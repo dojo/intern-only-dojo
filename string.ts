@@ -1,5 +1,4 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import lang = require('./lang');
 
 declare var exports;
@@ -23,17 +22,37 @@ export function repeat(string:string, times:number):string {
 	return buffer.join('');
 }
 
-function pad(text:string, size:number, character:string, end?:boolean):string {
-	var pad = exports.repeat(character, Math.ceil((size - text.length) / character.length));
+enum Padding {
+	Left,
+	Right,
+	Both
+};
 
-	return end ? text + pad : pad + text;
+function _pad(text:string, size:number, character:string, position:Padding = Padding.Right):string {
+	var length = size - text.length,
+		pad = exports.repeat(character, Math.ceil(length / character.length));
+
+	if (position === Padding.Left) {
+		return pad + text;
+	}
+	else if (position === Padding.Right) {
+		return text + pad;
+	}
+	else {
+		var left = Math.ceil(length / 2);
+		return pad.substr(0, left) + text + pad.substr(0, length - left);
+	}
+}
+
+export function pad(text:string, size:number, character:string = ' '):string {
+	return _pad(text, size, character, Padding.Both);
 }
 
 export function padr(text:string, size:number, character:string = ' '):string {
-	return pad(text, size, character, true);
+	return _pad(text, size, character, Padding.Right);
 }
 export function padl(text:string, size:number, character:string = ' '):string {
-	return pad(text, size, character, false);
+	return _pad(text, size, character, Padding.Left);
 }
 
 export interface ITransform {
@@ -45,12 +64,13 @@ function defaultTransform(value) {
 	return value;
 };
 export function substitute(template:string, map:Object, transform?:ITransform, context?:any):string;
-export function substitute(template:string, map:Array, transform?:ITransform, context?:any):string;
+export function substitute(template:string, map:Array<any>, transform?:ITransform, context?:any):string;
 export function substitute(template:string, map:any, transform?:ITransform, context?:any):string {
 	context = context || undefined;
 	transform = transform ? transform.bind(context) : defaultTransform;
 
-	return template.replace(substitutePattern, (match, key, format) => {
+	// TODO: remove <any> after https://typescript.codeplex.com/workitem/1812 is fixed
+	return template.replace(<any>substitutePattern, <any>function (match, key, format) {
 		var value = lang.getProperty(map, key);
 		if (format) {
 			value = lang.getProperty(context, format).call(context, value, key);

@@ -1,8 +1,9 @@
-/// <reference path="interfaces.ts" />
+import core = require('./interfaces');
 
 declare var process;
+declare var require;
 
-var has = <IHas>require.has;
+var has = <core.IHas>require.has;
 
 if (!has) {
 	has = (() => {
@@ -11,7 +12,7 @@ if (!has) {
 			document = global.document,
 			element = document && document.createElement('DiV');
 
-		var has = <IHas>function(feature:string):any {
+		var has = <core.IHas>function(feature:string):any {
 			return typeof hasCache[feature] === 'function' ? (hasCache[feature] = hasCache[feature](global, document, element)) : hasCache[feature];
 		};
 		has.add = function (feature:string, test:any, now?:boolean, force?:boolean):void {
@@ -58,7 +59,7 @@ has.normalize = function (id:string, normalize:Function):string {
 	return id && normalize(id);
 };
 
-has.load = function (id:string, parentRequire:Require, loaded:Function):void {
+has.load = function (id:string, parentRequire:core.Require, loaded:Function):void {
 	if (id) {
 		parentRequire([ id ], loaded);
 	}

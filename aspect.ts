@@ -1,4 +1,4 @@
-/// <reference path="interfaces.ts" />
+import core = require('./interfaces');
 
 var nextId = 0;
 
@@ -18,7 +18,7 @@ interface IDispatcher {
 	after?: IAdvised;
 }
 
-function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArguments?:boolean):IHandle {
+function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArguments?:boolean):core.IHandle {
 	var previous = dispatcher[type],
 		advised = <IAdvised>{
 			id: nextId++,
@@ -127,7 +127,7 @@ function getDispatcher(target:any, methodName:string):IDispatcher {
 	return dispatcher;
 }
 
-export function before(target:any, methodName:string, advice:Function):IHandle {
+export function before(target:any, methodName:string, advice:Function):core.IHandle {
 	return advise(getDispatcher(target, methodName), 'before', advice);
 }
 
@@ -135,7 +135,7 @@ export interface IAroundFactory {
 	(previous:Function):Function;
 }
 
-export function around(target:any, methodName:string, advice:IAroundFactory):IHandle {
+export function around(target:any, methodName:string, advice:IAroundFactory):core.IHandle {
 	var dispatcher = getDispatcher(target, methodName),
 		previous = dispatcher.around,
 		advised = advice(() => {
@@ -161,9 +161,9 @@ export function around(target:any, methodName:string, advice:IAroundFactory):IHa
 	};
 }
 
-export function after(target:any, methodName:string, advice:Function):IHandle {
+export function after(target:any, methodName:string, advice:Function):core.IHandle {
 	return advise(getDispatcher(target, methodName), 'after', advice);
 }
-export function on(target:any, methodName:string, advice:Function):IHandle {
+export function on(target:any, methodName:string, advice:Function):core.IHandle {
 	return advise(getDispatcher(target, methodName), 'after', advice, true);
 }

@@ -1,5 +1,4 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import has = require('./has');
 
 if (!has('host-browser')) {
@@ -40,13 +39,13 @@ if (!ready) {
 	});
 }
 
-var domReady = <ILoaderFunctionPlugin>function domReady(callback:Function) {
+var domReady = <core.ILoaderFunctionPlugin>function domReady(callback:Function) {
 	readyQueue.push(callback);
 	if (ready) {
 		processQueue();
 	}
 };
-function load(id:string, contextRequire:Require, loaded:Function):void {
+function load(id:string, contextRequire:core.Require, loaded:Function):void {
 	domReady(loaded);
 }
 domReady.load = load;

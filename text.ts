@@ -1,6 +1,7 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import has = require('./has');
+
+declare var require;
 
 var getText = function (url, load) {
 	throw new Error('dojo/text not supported on this platform');
@@ -34,6 +35,6 @@ else if (has('host-node')) {
 	};
 }
 
-export function load(id:string, contextRequire:Require, loaded:Function):void {
+export function load(id:string, contextRequire:core.Require, loaded:Function):void {
 	getText(id, loaded);
 }

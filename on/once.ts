@@ -1,9 +1,8 @@
-/// <reference path="../interfaces.ts" />
-
+import core = require('../interfaces');
 import on = require('../on');
 
-function once(type:string):IExtensionEvent {
-	return (target:any, listener:Function, capture?:boolean) => {
+function once(type:string):core.IExtensionEvent {
+	return (target:any, listener:Function, capture?:boolean):core.IHandle => {
 		var handle = on(target, type, () => {
 			handle.remove();
 			return listener.apply(this, arguments);

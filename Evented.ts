@@ -1,12 +1,11 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import on = require('./on');
 import aspect = require('./aspect');
 
 var slice = Array.prototype.slice;
 
-class Evented implements IEvented {
-	on(type:string, listener:Function):IHandle {
+class Evented implements core.IEvented {
+	on(type:string, listener:Function):core.IHandle {
 		return on.parse(this, type, listener, this, (target, type) => {
 			return aspect.on(this, '__on' + type, listener);
 		});

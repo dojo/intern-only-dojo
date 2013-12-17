@@ -1,5 +1,3 @@
-/// <reference path="interfaces.ts" />
-
 export function get(id:HTMLElement, doc?:Document):HTMLElement;
 export function get(id:string, doc?:Document):HTMLElement;
 export function get(id:any, doc?:Document):HTMLElement {

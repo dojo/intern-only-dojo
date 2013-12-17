@@ -1,6 +1,6 @@
-/// <reference path="interfaces.ts" />
+import core = require('./interfaces');
 
-class Registry<T extends IRegistryMatcher, U> {
+class Registry<T extends core.IRegistryMatcher, U> {
 	private _pairs:Array<{
 		match:T;
 		value:U;
@@ -13,7 +13,7 @@ class Registry<T extends IRegistryMatcher, U> {
 		}
 	}
 
-	register(matcher:T, value:U, first?:boolean):IHandle {
+	register(matcher:T, value:U, first?:boolean):core.IHandle {
 		var pair = {
 			match: matcher,
 			value: value

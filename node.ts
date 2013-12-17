@@ -1,4 +1,7 @@
-/// <reference path="interfaces.ts" />
+import core = require('./interfaces');
+
+declare var define;
+declare var require;
 
 var global = (function () { return this; })(),
 	nodeRequire = global.require && global.require.nodeRequire;
@@ -7,7 +10,7 @@ if (!nodeRequire) {
 	throw new Error('Cannot find the Node.js require');
 }
 
-export function load(id:string, contextRequire:Require, loaded:Function):void {
+export function load(id:string, contextRequire:core.Require, loaded:Function):void {
 	var oldDefine = define,
 		result;
 

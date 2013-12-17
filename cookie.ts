@@ -1,5 +1,4 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import string = require('./string');
 
 declare var exports;

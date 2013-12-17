@@ -1,5 +1,4 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import has = require('./has');
 
 var global = (function () { return this; })();
@@ -16,13 +15,13 @@ has.add('dom-mutationobserver', (global) => {
 // TODO: This works, but should it?
 if (has('native-promise')) {
 	return <{
-		new <T>(resolver:IPromiseResolver<T>);
-		all(iterable:any):IPromise<any[]>;
-		cast<T>(value:T):IPromise<T>;
-		cast<T>(value:IPromise<T>):IPromise<T>;
-		race(iterable:any):IPromise<any>;
-		reject<T>(reason:any):IPromise<T>;
-		resolve<T>(value:T):IPromise<T>;
+		new <T>(resolver:core.IPromiseResolver<T>);
+		all(iterable:any):core.IPromise<any[]>;
+		cast<T>(value:T):core.IPromise<T>;
+		cast<T>(value:core.IPromise<T>):core.IPromise<T>;
+		race(iterable:any):core.IPromise<any>;
+		reject<T>(reason:any):core.IPromise<T>;
+		resolve<T>(value:T):core.IPromise<T>;
 	}>global.Promise;
 }
 
@@ -90,9 +89,9 @@ function getDeferred<T>():IDeferred<T> {
 
 interface IResolutionHandler<T> {
 	(value:T):T;
-	(value:IPromise<T>):IPromise<T>;
+	(value:core.IPromise<T>):core.IPromise<T>;
 }
-function makeResolutionHandler<T>(promise:IPromise<any>, fulfillmentHandler:any, rejectionHandler:any):IResolutionHandler<T> {
+function makeResolutionHandler<T>(promise:core.IPromise<any>, fulfillmentHandler:any, rejectionHandler:any):IResolutionHandler<T> {
 	function F(value:any):any {
 		if (value === promise) {
 			return rejectionHandler.call(
@@ -162,8 +161,8 @@ var errorIdentity = (error:any):void => {
 	throw error;
 };
 
-class Promise<T> implements IPromise<T> {
-	constructor(resolver:IPromiseResolver<T>) {
+class Promise<T> implements core.IPromise<T> {
+	constructor(resolver:core.IPromiseResolver<T>) {
 		var status = 'pending',
 			resolveReactions:Array<IReaction> = [],
 			rejectReactions:Array<IReaction> = [],
@@ -192,10 +191,10 @@ class Promise<T> implements IPromise<T> {
 		}
 
 		var then: {
-			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):IPromise<U>;
-			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
-			<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):IPromise<U>;
-			<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
+			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):core.IPromise<U>;
+			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>core.IPromise<U>):core.IPromise<U>;
+			<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>U):core.IPromise<U>;
+			<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>core.IPromise<U>):core.IPromise<U>;
 		} = function then<U>(onFulfilled?:any, onRejected?:any):Promise<U> {
 			var promise = this,
 				deferred = getDeferred<U>();
@@ -236,15 +235,15 @@ class Promise<T> implements IPromise<T> {
 	}
 
 	catch<U>(onRejected:(reason:any)=>U):Promise<U>;
-	catch<U>(onRejected:(reason:any)=>IPromise<U>):Promise<U>;
+	catch<U>(onRejected:(reason:any)=>core.IPromise<U>):Promise<U>;
 	catch<U>(onRejected:(reason:any)=>any):Promise<U> {
 		return this.then<U>(undefined, onRejected);
 	}
 
 	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):Promise<U>;
-	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>IPromise<U>):Promise<U>;
-	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):Promise<U>;
-	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):Promise<U>;
+	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>core.IPromise<U>):Promise<U>;
+	then<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>U):Promise<U>;
+	then<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>core.IPromise<U>):Promise<U>;
 	then<U>(onFulfilled?:(value:T)=>any, onRejected?:(reason:any)=>any):Promise<U> {
 		throw new Error('"then" has not been implemented');
 	}
@@ -296,7 +295,7 @@ class Promise<T> implements IPromise<T> {
 	}
 
 	static cast<T>(value:T):Promise<T>;
-	static cast<T>(value:IPromise<T>):Promise<T>;
+	static cast<T>(value:core.IPromise<T>):Promise<T>;
 	static cast<T>(value:any):Promise<T> {
 		if (value instanceof Promise) {
 			return value;

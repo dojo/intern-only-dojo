@@ -1,4 +1,4 @@
-interface Require {
+export interface Require {
 	(config:any):void;
 	(config:any, modules:string[]):void;
 	(config:any, modules:string[], factory:Function):void;
@@ -12,43 +12,43 @@ interface Require {
 	toUrl: (moduleId:string)=>string;
 	nodeRequire: (moduleId:string)=>any;
 }
-declare var require: Require;
+export declare var require: Require;
 
-interface Define {
+export interface Define {
 	(factory:Function):void;
 	(dependencies:string[], factory:Function):void;
 	(value:any):void;
 }
-declare var define: Define;
+export declare var define: Define;
 
-interface ILoaderPlugin {
+export interface ILoaderPlugin {
 	normalize?(id:string, normalize:Function):string;
 	load(id:string, parentRequire:Require, loaded:Function, config?:any):void;
 }
 
-interface ILoaderFunctionPlugin extends ILoaderPlugin {
+export interface ILoaderFunctionPlugin extends ILoaderPlugin {
 	(...args:any[]):any;
 }
 
-interface IHas extends ILoaderFunctionPlugin {
+export interface IHas extends ILoaderFunctionPlugin {
 	(feature:string):any;
 	add(feature:string, test:(global:any, document:Document, element:HTMLElement)=>boolean, now?:boolean, force?:boolean):void;
 	add(feature:string, test:boolean, now?:boolean, force?:boolean):void;
 }
 
-interface IHandle {
+export interface IHandle {
 	remove():void;
 }
 
-interface IEvented {
+export interface IEvented {
 	on(type:string, listener:Function):IHandle;
 	emit(type:string, ...args:any[]):boolean;
 }
 
-interface IExtensionEvent {
+export interface IExtensionEvent {
 	(target:any, listener:Function):IHandle;
 }
-interface IOn {
+export interface IOn {
 	(target:HTMLElement, type:string, listener:Function, capture?:boolean):IHandle;
 	(target:HTMLElement, type:IExtensionEvent, listener:Function, capture?:boolean):IHandle;
 	(target:IEvented, type:string, listener:Function, capture?:boolean):IHandle;
@@ -61,15 +61,15 @@ interface IOn {
 	emit(target:IEvented, type:string, event:any):boolean;
 }
 
-interface IPromiseFunction<T> {
+export interface IPromiseFunction<T> {
 	(value:T):void;
 	(promise:IPromise<T>):void;
 }
-interface IPromiseResolver<T> {
+export interface IPromiseResolver<T> {
 	(resolve:IPromiseFunction<T>, reject:IPromiseFunction<any>):void;
 }
 
-interface IPromise<T> {
+export interface IPromise<T> {
 	catch<U>(onRejected:(reason:any)=>U):IPromise<U>;
 	catch<U>(onRejected:(reason:any)=>IPromise<U>):IPromise<U>;
 	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):IPromise<U>;
@@ -78,6 +78,6 @@ interface IPromise<T> {
 	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
 }
 
-interface IRegistryMatcher {
+export interface IRegistryMatcher {
 	(...args:any[]):boolean;
 }

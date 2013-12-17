@@ -1,10 +1,9 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import Evented = require('./Evented');
 
 var hub = new Evented();
 
-export function subscribe(topic:string, listener:Function):IHandle {
+export function subscribe(topic:string, listener:Function):core.IHandle {
 	return hub.on.apply(hub, arguments);
 }
 

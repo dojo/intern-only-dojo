@@ -4,7 +4,7 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 
-	var defaultSourceFiles = [ '**/*.ts', '!node_modules/**/*.ts', '!interfaces.ts' ];
+	var defaultSourceFiles = [ '**/*.ts', '!node_modules/**/*.ts', '!interfaces.d.ts' ];
 	grunt.initConfig({
 		ts: {
 			dev: {
@@ -27,7 +27,7 @@ module.exports = function (grunt) {
 		},
 		clean: {
 			ts: {
-				src: [ '**/*.js', '**/*.js.map', '**/*.d.ts', '!node_modules/**/*', '!Gruntfile.js', '!loader.js' ]
+				src: [ '**/*.js', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js', '!loader.js' ]
 			}
 		}
 	});
@@ -51,7 +51,7 @@ module.exports = function (grunt) {
 
 	var changedFiles = {},
 		onChange = grunt.util._.debounce(function (all) {
-			var src = changedFiles['interfaces.ts'] ? defaultSourceFiles.slice(0) : Object.keys(changedFiles);
+			var src = changedFiles['interfaces.d.ts'] ? defaultSourceFiles.slice(0) : Object.keys(changedFiles);
 			grunt.config('ts.dev.src', src);
 			changedFiles = {};
 		}, 200);

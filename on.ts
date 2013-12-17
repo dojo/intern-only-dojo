@@ -1,10 +1,9 @@
-/// <reference path="interfaces.ts" />
-
+import core = require('./interfaces');
 import has = require('./has');
 
 var slice = Array.prototype.slice;
 
-function addListener(target:any, type:string, listener:Function, capture?:boolean):IHandle {
+function addListener(target:any, type:string, listener:Function, capture?:boolean):core.IHandle {
 	if (target.addEventListener) {
 		target.addEventListener(type, listener, capture);
 
@@ -19,7 +18,7 @@ function addListener(target:any, type:string, listener:Function, capture?:boolea
 	throw new Error('Target must be an event emitter');
 }
 
-var on = <IOn>function (target:any, type:any, listener:Function, capture?:boolean):IHandle {
+var on = <core.IOn>function (target:any, type:any, listener:Function, capture?:boolean):core.IHandle {
 	if (typeof target.on === 'function' && typeof type !== 'function' && !target.nodeType) {
 		return target.on(type, listener, capture);
 	}
@@ -27,7 +26,7 @@ var on = <IOn>function (target:any, type:any, listener:Function, capture?:boolea
 	return on.parse(target, type, listener, this, addListener, capture);
 }
 
-function parse(target:any, type:any, listener:Function, context:any, addListener:Function, capture?:boolean):IHandle {
+function parse(target:any, type:any, listener:Function, context:any, addListener:Function, capture?:boolean):core.IHandle {
 	if (type.call) {
 		return type.call(context, target, listener, capture);
 	}
@@ -39,7 +38,7 @@ function parse(target:any, type:any, listener:Function, context:any, addListener
 			handle = {
 				remove: () => {
 					handle.remove = () => {};
-					handles.forEach((handle:IHandle) => {
+					handles.forEach((handle:core.IHandle) => {
 						handle.remove();
 					});
 				}
