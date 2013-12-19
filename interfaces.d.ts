@@ -77,6 +77,9 @@ export interface IPromise<T> {
 	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):IPromise<U>;
 	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
 }
+export declare var IPromise: {
+	new <T>(resolver:IPromiseResolver<T>);
+};
 
 export interface IRegistryMatcher {
 	(...args:any[]):boolean;

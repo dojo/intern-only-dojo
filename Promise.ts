@@ -77,12 +77,16 @@ interface IDeferred<T> {
 	reject:(reason:any)=>void;
 }
 
-function getDeferred<T>():IDeferred<T> {
-	var deferred = <IDeferred<T>>{};
-	deferred.promise = new Promise<T>((resolve, reject) => {
+function getDeferred<T>(constructor:(resolver:core.IPromiseResolver<T>)=>core.IPromise<T>):IDeferred<T> {
+	var deferred = <IDeferred<T>>{},
+		promise = Object.create(Promise.prototype);
+
+	var result = constructor.call(promise, (resolve, reject) => {
 		deferred.resolve = resolve;
 		deferred.reject = reject;
 	});
+
+	deferred.promise = typeof result === 'object' ? result : promise;
 
 	return deferred;
 }
@@ -105,7 +109,7 @@ function makeResolutionHandler<T>(promise:core.IPromise<any>, fulfillmentHandler
 				return value.then(fulfillmentHandler, rejectionHandler);
 			}
 
-			var deferred = getDeferred<T>();
+			var deferred = getDeferred<T>((<any>promise).constructor);
 			try {
 				value.then(deferred.resolve, deferred.reject);
 			}
@@ -197,7 +201,7 @@ class Promise<T> implements core.IPromise<T> {
 			<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>core.IPromise<U>):core.IPromise<U>;
 		} = function then<U>(onFulfilled?:any, onRejected?:any):Promise<U> {
 			var promise = this,
-				deferred = getDeferred<U>();
+				deferred = getDeferred<U>((<any>promise).constructor);
 
 			var rejectionHandler = errorIdentity;
 			if (typeof onRejected === 'function') {
