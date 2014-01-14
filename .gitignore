@@ -1,3 +1,5 @@
 *.js
 *.js.map
+*.d.ts
+!/interfaces.d.ts
 node_modules
