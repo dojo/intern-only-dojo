@@ -31,7 +31,7 @@ var queueMicrotask,
 	bind = Function.prototype.bind;
 
 if (has('host-node')) {
-	queueMicrotask = (microtask:Function, argumentsList:Array<any>) => {
+	queueMicrotask = (microtask:Function, argumentsList:any[]) => {
 		process.nextTick(bind.apply(microtask, [undefined].concat(argumentsList)));;
 	};
 }
@@ -59,14 +59,14 @@ else if (has('dom-mutationobserver')) {
 			observer = element = null;
 		});
 
-		return (microtask:Function, argumentsList:Array<any>) => {
+		return (microtask:Function, argumentsList:any[]) => {
 			callbacks.push(bind.apply(microtask, [undefined].concat(argumentsList)));
 			element.setAttribute('drainQueue', 'drainQueue');
 		};
 	})();
 }
 else {
-	queueMicrotask = (microtask:Function, argumentsList:Array<any>) => {
+	queueMicrotask = (microtask:Function, argumentsList:any[]) => {
 		setTimeout(bind.apply(microtask, [undefined].concat(argumentsList)), 0);
 	};
 }
@@ -168,8 +168,8 @@ var errorIdentity = (error:any):void => {
 class Promise<T> implements core.IPromise<T> {
 	constructor(resolver:core.IPromiseResolver<T>) {
 		var status = 'pending',
-			resolveReactions:Array<IReaction> = [],
-			rejectReactions:Array<IReaction> = [],
+			resolveReactions:IReaction[] = [],
+			rejectReactions:IReaction[] = [],
 			result;
 
 		function triggerReactions(reactions, newStatus, newResult) {
