@@ -12,7 +12,8 @@ module.exports = function (grunt) {
 				outDir: '.',
 				options: {
 					target: 'es5',
-					module: 'amd'
+					module: 'amd',
+					declaration: true
 				}
 			}
 		},
@@ -27,7 +28,7 @@ module.exports = function (grunt) {
 		},
 		clean: {
 			ts: {
-				src: [ '**/*.js', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js', '!loader.js' ]
+				src: [ '**/*.js', '**.d.ts', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js', '!loader.js', '!interfaces.d.ts' ]
 			}
 		}
 	});
