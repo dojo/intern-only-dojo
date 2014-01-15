@@ -1,5 +1,8 @@
 *.js
 *.js.map
 *.d.ts
-!/interfaces.d.ts
 node_modules
+/html-report
+!/interfaces.d.ts
+!/tests/*.d.ts
+!/tests/**/all.js
