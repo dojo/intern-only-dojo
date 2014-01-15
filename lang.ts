@@ -29,7 +29,7 @@ export function getProperty(object:any, propertyName:string, create:boolean = fa
 	return getDottedProperty(object, propertyName.split('.'), create);
 }
 
-function _mixin<T>(destination:T, source:any):T {
+function _mixin<T>(destination:any, source:any):T {
 	for (var name in source) {
 		var sourceValue = source[name];
 		if (name in destination && destination[name] === sourceValue) {
@@ -42,18 +42,21 @@ function _mixin<T>(destination:T, source:any):T {
 	return destination;
 }
 
-export function mixin<T>(destination:T, ...sources:any[]):T;
-export function mixin<T>(destination:T):T {
+export function mixin<T extends Object>(destination:T, ...sources:any[]):T;
+export function mixin<T extends Object>(destination:any, ...sources:any[]):T;
+export function mixin(destination:any, ...sources:any[]):any {
 	if (!destination) {
-		destination = <T>{};
+		destination = {};
 	}
-	for (var i = 1; i < arguments.length; i++) {
-		_mixin(destination, arguments[i]);
+	for (var i = 0; i < sources.length; i++) {
+		_mixin(destination, sources[i]);
 	}
 	return destination;
 }
 
-export function delegate<T>(object:T, properties?:any):T {
+export function delegate<T extends Object>(object:T, properties?:any):T;
+export function delegate<T extends Object>(object:any, properties?:any):T;
+export function delegate(object:any, properties?:any):any {
 	object = Object.create(object);
 	_mixin(object, properties);
 	return object;
@@ -62,25 +65,25 @@ export function delegate<T>(object:T, properties?:any):T {
 var _bind = Function.prototype.bind;
 export function bind<T extends Function>(context:any, func:Function, ...extra:any[]):T;
 export function bind<T extends Function>(context:any, method:string, ...extra:any[]):T;
-export function bind(context:any, func:any):any {
+export function bind(context:any, func:any, ...extra:any[]):any {
 	if (typeof func === 'function') {
-		return _bind.apply(func, [context].concat(slice.call(arguments, 2)));
+		return _bind.apply(func, [context].concat(extra));
 	}
-	var extra = slice.call(arguments, 2);
 	return function () {
-		return context[func].apply(context, extra.concat(slice.call(arguments)));
+		return context[func].apply(context, extra.concat(slice.call(arguments, 0)));
 	};
 }
 
 export function partial<T extends Function>(func:Function, ...extra:any[]):T;
-export function partial(func:Function):any {
-	var extra = slice.call(arguments, 1);
+export function partial(func:Function, ...extra:any[]):any {
 	return function () {
-		return func.apply(this, extra.concat(slice.call(arguments)));
+		return func.apply(this, extra.concat(slice.call(arguments, 0)));
 	};
 }
 
-export function deepMixin<T>(target:T, source:any):T {
+export function deepMixin<T extends Object>(target:T, source:any):T;
+export function deepMixin<T extends Object>(target:any, source:any):T;
+export function deepMixin(target:any, source:any):any {
 	if (source && typeof source === 'object') {
 		if (Array.isArray(source)) {
 			(<any>target).length = source.length;
@@ -105,16 +108,17 @@ export function deepMixin<T>(target:T, source:any):T {
 	return target;
 }
 
-export function deepDelegate<T>(origin:T, properties:any = null):T {
+export function deepDelegate<T extends Object>(origin:T, properties?:any):T;
+export function deepDelegate<T extends Object>(origin:any, properties?:any):T;
+export function deepDelegate(origin:any, properties:any = null):any {
 	var destination = delegate(origin);
-	properties = properties || null;
 
 	for (var name in origin) {
 		var value = origin[name];
 
 		if (value && typeof value === 'object') {
-			destination[name] = deepDelegate(value);
+			destination[name] = deepDelegate<typeof value>(value);
 		}
 	}
-	return deepMixin(destination, properties);
+	return deepMixin<any>(destination, properties);
 }
