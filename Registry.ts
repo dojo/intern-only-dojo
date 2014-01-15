@@ -23,7 +23,7 @@ class Registry<T extends core.IRegistryMatcher, U> {
 		var handle = {
 			remove: () => {
 				handle.remove = () => {};
-				var idx;
+				var idx:number;
 				if ((idx = this._pairs.indexOf(pair)) > -1) {
 					this._pairs.splice(idx, 1);
 				}

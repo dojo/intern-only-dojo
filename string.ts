@@ -1,14 +1,14 @@
 import core = require('./interfaces');
 import lang = require('./lang');
 
-declare var exports;
+declare var exports:any;
 
 export function repeat(string:string, times:number):string {
 	if (!string || times <= 0) {
 		return '';
 	}
 
-	var buffer = [];
+	var buffer:string[] = [];
 	while (true) {
 		if (times & 1) {
 			buffer.push(string);
@@ -60,7 +60,7 @@ export interface ITransform {
 }
 
 var substitutePattern = /\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g;
-function defaultTransform(value) {
+function defaultTransform(value:any):any {
 	return value;
 };
 export function substitute(template:string, map:Object, transform?:ITransform, context?:any):string;
@@ -70,7 +70,7 @@ export function substitute(template:string, map:any, transform?:ITransform, cont
 	transform = transform ? transform.bind(context) : defaultTransform;
 
 	// TODO: remove <any> after https://typescript.codeplex.com/workitem/1812 is fixed
-	return template.replace(<any>substitutePattern, <any>function (match, key, format) {
+	return template.replace(<any>substitutePattern, <any>function (match:string, key:string, format:string) {
 		var value = lang.getProperty(map, key);
 		if (format) {
 			value = lang.getProperty(context, format).call(context, value, key);

@@ -1,7 +1,7 @@
 var slice = Array.prototype.slice;
 
-function getDottedProperty(object:any, parts:Array<string>, create:boolean):any {
-	var key,
+function getDottedProperty(object:any, parts:string[], create:boolean):any {
+	var key:string,
 		i = 0;
 
 	while (object && (key = parts[i++])) {

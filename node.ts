@@ -1,7 +1,7 @@
 import core = require('./interfaces');
 
-declare var define;
-declare var require;
+declare var define:core.Define;
+declare var require:core.Require;
 
 var global = (function () { return this; })(),
 	nodeRequire = global.require && global.require.nodeRequire;
@@ -12,7 +12,7 @@ if (!nodeRequire) {
 
 export function load(id:string, contextRequire:core.Require, loaded:Function):void {
 	var oldDefine = define,
-		result;
+		result:any;
 
 	// Some modules attempt to detect an AMD loader by looking for global AMD `define`. This causes issues
 	// when other CommonJS modules attempt to load them via the standard Node.js `require`, so hide it

@@ -1,7 +1,7 @@
 import core = require('./interfaces');
 
-declare var process;
-declare var require;
+declare var process:any;
+declare var require:core.Require;
 
 var has = <core.IHas>require.has;
 

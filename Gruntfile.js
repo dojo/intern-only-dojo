@@ -13,7 +13,8 @@ module.exports = function (grunt) {
 				options: {
 					target: 'es5',
 					module: 'amd',
-					declaration: true
+					declaration: true,
+					noImplicitAny: true
 				}
 			}
 		},

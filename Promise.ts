@@ -15,7 +15,7 @@ has.add('dom-mutationobserver', (global) => {
 // TODO: This works, but should it?
 if (has('native-promise')) {
 	return <{
-		new <T>(resolver:core.IPromiseResolver<T>);
+		new <T>(resolver:core.IPromiseResolver<T>):core.IPromise<T>;
 		all(iterable:any):core.IPromise<any[]>;
 		cast<T>(value:T):core.IPromise<T>;
 		cast<T>(value:core.IPromise<T>):core.IPromise<T>;
@@ -25,9 +25,9 @@ if (has('native-promise')) {
 	}>global.Promise;
 }
 
-declare var process;
+declare var process:any;
 
-var queueMicrotask,
+var queueMicrotask:(microtask:Function, argumentsList:any[]) => void,
 	bind = Function.prototype.bind;
 
 if (has('host-node')) {
@@ -38,7 +38,7 @@ if (has('host-node')) {
 else if (has('dom-mutationobserver')) {
 	queueMicrotask = (function () {
 		var MutationObserver = this.MutationObserver || this.WebKitMutationObserver,
-			callbacks = [];
+			callbacks:Function[] = [];
 
 		var observer = new MutationObserver(() => {
 			var callback = callbacks.shift();
@@ -81,7 +81,7 @@ function getDeferred<T>(constructor:(resolver:core.IPromiseResolver<T>)=>core.IP
 	var deferred = <IDeferred<T>>{},
 		promise = Object.create(Promise.prototype);
 
-	var result = constructor.call(promise, (resolve, reject) => {
+	var result:core.IPromise<T> = constructor.call(promise, (resolve:core.IPromiseFunction<T>, reject:core.IPromiseFunction<T>) => {
 		deferred.resolve = resolve;
 		deferred.reject = reject;
 	});
@@ -133,7 +133,7 @@ interface IReaction {
 function executePromiseReaction(reaction:IReaction, argument:any) {
 	var deferred = reaction.deferred,
 		handler = reaction.handler,
-		handlerResult;
+		handlerResult:any;
 
 	try {
 		handlerResult = handler.call(undefined, argument);
@@ -170,9 +170,9 @@ class Promise<T> implements core.IPromise<T> {
 		var status = 'pending',
 			resolveReactions:IReaction[] = [],
 			rejectReactions:IReaction[] = [],
-			result;
+			result:T;
 
-		function triggerReactions(reactions, newStatus, newResult) {
+		function triggerReactions(reactions:IReaction[], newStatus:string, newResult:T) {
 			if (status !== 'pending') {
 				return;
 			}
@@ -253,20 +253,20 @@ class Promise<T> implements core.IPromise<T> {
 	}
 
 	static all(iterable:any):Promise<any[]> {
-		var resolve, reject,
+		var resolve:core.IPromiseFunction<any>, reject:core.IPromiseFunction<any>,
 			promise = new Promise((_resolve, _reject) => {
 				resolve = _resolve;
 				reject = _reject;
 			});
 
-		var values = [],
+		var values:any[] = [],
 			index = 0,
 			count = 0;
 
-		function thenNext(value) {
+		function thenNext(value:any) {
 			var nextPromise = Promise.cast(value);
 
-			nextPromise.then(((index, value) => {
+			nextPromise.then(((index:number, value:any) => {
 				try {
 					values[index] = value;
 				}

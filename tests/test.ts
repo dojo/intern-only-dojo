@@ -1,29 +1,29 @@
-/// <amd-dependency path="../text!../on.js" />
 /// <amd-dependency path="../domReady!" />
 
+import core = require('../interfaces');
 import Promise = require('../Promise');
 import Evented = require('../Evented');
-var template = require('../text!../on.js');
+import lang = require('../lang');
 
-var resolve, reject,
-	promise = new Promise((_resolve) => {
-		_resolve(new Promise((_resolve, _reject) => {
+var resolve:core.IPromiseFunction<number>, reject:core.IPromiseFunction<number>,
+	promise = new Promise<number>((_resolve) => {
+		_resolve(new Promise<number>((_resolve, _reject) => {
 			resolve = _resolve;
 			reject = _reject;
 		}));
 	});
 
 promise.then(
-	(value) => {
+	(value:number) => {
 		console.log('Here:', value);
 	}
 );
 
-var promise1 = new Promise((resolve) => {
+var promise1 = new Promise<number>((resolve) => {
 	resolve(5);
 });
 
-Promise.all({ one: promise, two: promise1 }).then((results) => {
+Promise.all({ one: promise, two: promise1 }).then((results:any) => {
 	console.log(results);
 }, (errors) => {
 	console.log(errors);
@@ -31,9 +31,13 @@ Promise.all({ one: promise, two: promise1 }).then((results) => {
 
 resolve(4);
 
-class MyEvented extends Evented {}
+var recursiveResolve:core.IPromiseFunction<any>,
+	recursive = new Promise((_resolve) => {
+		recursiveResolve = _resolve;
+	});
 
-var me = new MyEvented();
-me.emit('foo', 'bar', 'baz');
+recursiveResolve(recursive);
 
-console.log(template);
+recursive.catch((error) => {
+	console.log('Error!', error);
+});

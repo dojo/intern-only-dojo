@@ -1,7 +1,7 @@
 import core = require('./interfaces');
 import string = require('./string');
 
-declare var exports;
+declare var exports:any;
 
 if (!navigator.cookieEnabled) {
 	return null;

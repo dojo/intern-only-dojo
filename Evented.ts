@@ -6,7 +6,7 @@ var slice = Array.prototype.slice;
 
 class Evented implements core.IEvented {
 	on(type:string, listener:Function):core.IHandle {
-		return on.parse(this, type, listener, this, (target, type) => {
+		return on.parse(this, type, listener, this, (target:Evented, type:string) => {
 			return aspect.on(this, '__on' + type, listener);
 		});
 	}

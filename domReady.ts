@@ -3,7 +3,7 @@ import has = require('./has');
 
 if (!has('host-browser')) {
 	return {
-		load: function (id, contextRequire, loaded) {
+		load: function (id:string, contextRequire:Function, loaded:Function) {
 			loaded(undefined);
 		}
 	};
@@ -13,7 +13,7 @@ var readyStates = Object.create(null);
 readyStates.loaded = readyStates.complete = true;
 
 var ready = readyStates[document.readyState],
-	readyQueue = [],
+	readyQueue:Function[] = [],
 	processing = false;
 
 function processQueue() {

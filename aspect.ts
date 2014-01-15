@@ -76,14 +76,14 @@ function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArg
 
 function getDispatcher(target:any, methodName:string):IDispatcher {
 	var existing = target[methodName],
-		dispatcher;
+		dispatcher:IDispatcher;
 
 	if (!existing || existing.target !== target) {
 		// no dispatcher
-		target[methodName] = dispatcher = <IDispatcher>() => {
+		target[methodName] = dispatcher = <IDispatcher>(() => {
 			var executionId = nextId,
 				args = arguments,
-				results,
+				results:any,
 				before = dispatcher.before;
 
 			while (before) {
@@ -107,11 +107,11 @@ function getDispatcher(target:any, methodName:string):IDispatcher {
 				after = after.next;
 			}
 			return results;
-		};
+		});
 
 		if (existing) {
 			dispatcher.around = {
-				advice: (target, args) => {
+				advice: (target:any, args:any[]) => {
 					return existing.apply(target, args);
 				}
 			};
@@ -143,7 +143,7 @@ export function around(target:any, methodName:string, advice:IAroundFactory):cor
 		});
 
 	dispatcher.around = {
-		advice: (target, args) => {
+		advice: (target:any, args:any[]) => {
 			return advised ?
 				advised.apply(target, args) :
 				previous.advice(target, args);

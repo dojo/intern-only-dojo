@@ -1,9 +1,9 @@
 import core = require('./interfaces');
 import has = require('./has');
 
-declare var require;
+declare var require:core.Require;
 
-var getText = function (url, load) {
+var getText = function (url:string, load:Function) {
 	throw new Error('dojo/text not supported on this platform');
 };
 
@@ -26,7 +26,7 @@ if (has('host-browser')) {
 else if (has('host-node')) {
 	var fs = require.nodeRequire('fs');
 	getText = function (url, load) {
-		fs.readFile(url, { encoding: 'utf-8' }, function (err, data) {
+		fs.readFile(url, { encoding: 'utf-8' }, function (err:Error, data:string) {
 			if (err) {
 				throw err;
 			}
