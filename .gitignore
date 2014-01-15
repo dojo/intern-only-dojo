@@ -2,6 +2,8 @@
 *.js.map
 *.d.ts
 node_modules
+tscommand.tmp.txt
+sauce_connect.log
 /html-report
 !/interfaces.d.ts
 !/tests/*.d.ts

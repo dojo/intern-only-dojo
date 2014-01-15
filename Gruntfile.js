@@ -70,7 +70,11 @@ module.exports = function (grunt) {
 		},
 		clean: {
 			ts: {
-				src: [ '**/*.js', '**/*.d.ts', '**/*.js.map', '!node_modules/**/*', '!Gruntfile.js', '!loader.js', '!interfaces.d.ts', '!tests/*.d.ts', '!tests/**/all.js' ]
+				src: [
+					'**/*.js', '**/*.d.ts', '**/*.js.map', 'sauce_connect.log', 'tscommand.tmp.txt',
+					'!node_modules/**/*', '!Gruntfile.js', '!loader.js',
+					'!interfaces.d.ts', '!tests/*.d.ts', '!tests/**/all.js'
+				]
 			}
 		}
 	});
