@@ -1,1 +1,3 @@
-define([], function () {});
+define([
+	'./lang'
+], function () {});
