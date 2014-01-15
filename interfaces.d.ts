@@ -25,13 +25,13 @@ export interface IHas extends ILoaderFunctionPlugin {
 	add(feature:string, test:boolean, now?:boolean, force?:boolean):void;
 }
 
+export interface ILoaderFunctionPlugin extends ILoaderPlugin {
+	(...args:any[]):any;
+}
+
 export interface ILoaderPlugin {
 	normalize?(id:string, normalize:Function):string;
 	load(id:string, parentRequire:Require, loaded:Function, config?:any):void;
-}
-
-export interface ILoaderFunctionPlugin extends ILoaderPlugin {
-	(...args:any[]):any;
 }
 
 export interface IOn {
@@ -47,15 +47,6 @@ export interface IOn {
 	emit(target:IEvented, type:string, event:any):boolean;
 }
 
-export interface IPromiseFunction<T> {
-	(value:T):void;
-	(promise:IPromise<T>):void;
-}
-
-export interface IPromiseResolver<T> {
-	(resolve:IPromiseFunction<T>, reject:IPromiseFunction<any>):void;
-}
-
 export interface IPromise<T> {
 	catch<U>(onRejected:(reason:any)=>U):IPromise<U>;
 	catch<U>(onRejected:(reason:any)=>IPromise<U>):IPromise<U>;
@@ -63,6 +54,15 @@ export interface IPromise<T> {
 	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
 	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>U):IPromise<U>;
 	then<U>(onFulfilled?:(value:T)=>IPromise<U>, onRejected?:(reason:any)=>IPromise<U>):IPromise<U>;
+}
+
+export interface IPromiseFunction<T> {
+	(value:T):void;
+	(promise:IPromise<T>):void;
+}
+
+export interface IPromiseResolver<T> {
+	(resolve:IPromiseFunction<T>, reject:IPromiseFunction<any>):void;
 }
 
 export interface IRegistryMatcher {
@@ -83,4 +83,5 @@ export interface Require {
 	toUrl: (moduleId:string)=>string;
 	nodeRequire: (moduleId:string)=>any;
 }
+
 export declare var require: Require;
