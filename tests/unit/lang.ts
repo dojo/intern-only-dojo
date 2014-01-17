@@ -41,6 +41,13 @@ registerSuite({
 
 		assert.strictEqual(lang.getProperty(properties, 'property'), 'foo');
 		assert.strictEqual(lang.getProperty(properties, 'subObject.property'), 'bar');
+		assert.isUndefined(lang.getProperty(properties, 'property.notHere'));
+		assert.isUndefined(lang.getProperty(properties, 'notHere'));
+
+		lang.getProperty(properties, 'notHere.foo', true);
+
+		assert.isObject(lang.getProperty(properties, 'notHere'));
+		assert.isObject(lang.getProperty(properties, 'notHere.foo'));
 	},
 
 	'.setProperty': function () {
@@ -55,6 +62,10 @@ registerSuite({
 		assert.propertyVal(properties, 'property', 'baz');
 		lang.setProperty(properties, 'subObject.property', 'blah');
 		assert.deepPropertyVal(properties, 'subObject.property', 'blah');
+		lang.setProperty(properties, 'notHere.foo', 'bar');
+		assert.deepPropertyVal(properties, 'notHere.foo', 'bar');
+
+		assert.isUndefined(lang.setProperty(properties, '', 'bar'));
 	},
 
 	'.mixin': function () {
@@ -78,6 +89,9 @@ registerSuite({
 		});
 		assert.strictEqual(extra.property, 'blah');
 		assert.strictEqual(extra.newProperty, 'foo');
+
+		var empty = lang.mixin<Object>({}, { toString: Object.prototype.toString });
+		assert(!empty.hasOwnProperty('toString'));
 	},
 
 	'.delegate': function () {
@@ -215,17 +229,25 @@ registerSuite({
 		assert.notStrictEqual(dest.subObject, properties.subObject);
 
 		var extra:IExtraProps = lang.deepMixin<IExtraProps>(dest, {
-			property: 'blah',
+			property: 'bar', // this is the same value on purpose for branch coverage
 			newProperty: 'foo',
 			subObject: {
 				otherProperty: 'la'
 			}
 		});
-		assert.strictEqual(extra.property, 'blah');
 		assert.strictEqual(extra.newProperty, 'foo');
 		assert.notStrictEqual(extra.subObject, properties.subObject);
 		assert.strictEqual(extra.subObject.property, 'baz');
 		assert.strictEqual(extra.subObject.otherProperty, 'la');
+
+		var array = [ 'foo' ];
+		array[2] = 'bar';
+		array.length = 4;
+
+		var arrayLike = lang.deepMixin<string[]>({}, array);
+		assert.strictEqual(arrayLike[0], 'foo');
+		assert.strictEqual(arrayLike[2], 'bar');
+		assert.strictEqual(arrayLike.length, 4);
 	},
 
 	'.deepDelegate': function () {
