@@ -33,13 +33,12 @@ class Registry<T extends core.IRegistryMatcher, U> {
 		return handle;
 	}
 
-	match(...args:any[]):U;
-	match():U {
+	match(...args:any[]):U {
 		var pairs = this._pairs.slice(0),
 			pair:{ match: T; value: U; };
 
 		for (var i = 0; (pair = this._pairs[i]); i++) {
-			if (pair.match.apply(null, arguments)) {
+			if (pair.match.apply(null, args)) {
 				return pair.value;
 			}
 		}

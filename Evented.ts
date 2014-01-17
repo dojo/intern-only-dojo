@@ -11,10 +11,8 @@ class Evented implements core.IEvented {
 		});
 	}
 
-	emit(type:string, ...args:any[]):boolean;
-	emit(type:string):boolean {
+	emit(type:string, ...args:any[]):boolean {
 		type = '__on' + type;
-		var args = slice.call(arguments, 1);
 		if (this[type]) {
 			return this[type].apply(this, args);
 		}
