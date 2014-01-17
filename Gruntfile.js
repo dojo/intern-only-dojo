@@ -1,30 +1,37 @@
 /* jshint node:true */
+
+var path = require('path'),
+	_ = require('lodash'),
+	globule = require('globule');
+
 module.exports = function (grunt) {
-	grunt.loadNpmTasks('grunt-ts');
+	grunt.loadNpmTasks('grunt-typescript');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('intern');
 
 	grunt.initConfig({
-		ts: {
+		all: [ '**/*.ts', '!**/*.d.ts', '!node_modules/**/*.ts' ],
+		onlyTests: [ 'tests/**/*.ts', '!tests/**/*.d.ts' ],
+
+		defaultLib: [ '<%= all %>', '!tests/**/*.ts' ],
+		defaultTests: [ '<%= onlyTests %>' ],
+
+		typescript: {
+			options: {
+				target: 'es5',
+				module: 'amd',
+				sourcemap: true,
+				noImplicitAny: true
+			},
 			lib: {
-				src: [ '**/*.ts', '!**/*.d.ts', '!node_modules/**/*.ts', '!tests/**/*.ts' ],
-				outDir: '.',
+				src: [ '<%= defaultLib %>' ],
 				options: {
-					target: 'es5',
-					module: 'amd',
-					declaration: true,
-					noImplicitAny: true
+					declaration: true
 				}
 			},
 			tests: {
-				src: [ 'tests/**/*.ts', '!tests/**/*.d.ts' ],
-				outDir: 'tests',
-				options: {
-					target: 'es5',
-					module: 'amd',
-					noImplicitAny: true
-				}
+				src: [ '<%= defaultTests %>' ]
 			}
 		},
 		intern: {
@@ -59,17 +66,16 @@ module.exports = function (grunt) {
 			}
 		},
 		watch: {
-			lib: {
-				files: [ '**/*.ts', '!**/*.d.ts', 'interfaces.d.ts', '!tests/**/*.ts', '!node_modules/**/*.ts' ],
-				tasks: [ 'ts:lib', 'ts:tests' ]
-			},
-			tests: {
-				files: [ 'tests/**/*.ts' ],
-				tasks: [ 'ts:tests' ]
+			all: {
+				files: [ '<%= all %>', 'interfaces.d.ts', 'tests/**/*.d.ts' ],
+				tasks: [ 'typescript:lib', 'typescript:tests' ],
+				options: {
+					spawn: false
+				}
 			}
 		},
 		clean: {
-			ts: {
+			typescript: {
 				src: [
 					'**/*.js', '**/*.d.ts', '**/*.js.map', 'sauce_connect.log', 'tscommand.tmp.txt',
 					'!node_modules/**/*', '!Gruntfile.js', '!loader.js',
@@ -93,8 +99,7 @@ module.exports = function (grunt) {
 		}
 	});
 
-	grunt.registerTask('default', [ 'force:on', 'ts', 'force:restore', 'watch' ]);
-	grunt.registerTask('build', [ 'ts:lib' ]);
+	grunt.registerTask('build', [ 'typescript:lib' ]);
 
 	grunt.registerTask('test', function (target) {
 		if (!target || target === 'coverage' || target === 'nocompile') {
@@ -120,8 +125,118 @@ module.exports = function (grunt) {
 		}
 
 		if (this.flags.recompile) {
-			grunt.task.run('ts');
+			grunt.task.run('typescript');
 		}
 		grunt.task.run('intern:' + target);
+	});
+
+	grunt.registerTask('default', function () {
+		var dependsOn = {},
+			commentsRE = /\/\*[\s\S]*?\*\/|\/\/.*$/mg,
+			importRE = /import\s+\w+\s+=\s+require\(\s*(['"])(\..*?[^\\])\1\s*\)/g,
+			referenceRE = /\/\/\/\s+<reference\s+path="(.*?)\.d\.ts"\s*?\/>/g;
+
+		function analyzeDependencies(filepath, action) {
+			if (typeof action === 'string' && action !== 'added') {
+				for (var key in dependsOn) {
+					if (dependsOn[key].length) {
+						var index = dependsOn[key].indexOf(filepath);
+						if (index > -1) {
+							dependsOn[key].splice(index, 1);
+						}
+					}
+				}
+			}
+			if (action === 'removed') {
+				return;
+			}
+			var deps = [];
+			grunt.file.read(filepath)
+				.replace(referenceRE, function (whole, dep) {
+					deps.push(dep);
+
+					return whole;
+				})
+				.replace(commentsRE, '')
+				.replace(importRE, function (whole, quote, dep) {
+					deps.push(dep);
+
+					return whole;
+				});
+
+			if (!deps.length) {
+				return;
+			}
+
+			var dirname = path.dirname(filepath);
+			deps.forEach(function (dep) {
+				dep = path.normalize(path.join(dirname, dep));
+
+				if (!dependsOn[dep]) {
+					dependsOn[dep] = [filepath];
+				}
+				else {
+					dependsOn[dep].push(filepath);
+				}
+			});
+		}
+
+		function getDependents(filepath, seen) {
+			filepath = filepath.replace(/(?:\.d)?\.ts$/, '');
+			seen = seen || [];
+
+			var res = [];
+			if (seen.indexOf(filepath) > -1) {
+				return res;
+			}
+
+			seen.push(filepath);
+			if (filepath in dependsOn) {
+				dependsOn[filepath].forEach(function (filepath) {
+					res.push(filepath);
+					var _res = getDependents(filepath, seen);
+					if (_res.length) {
+						res.push.apply(res, _res);
+					}
+				});
+			}
+
+			return res;
+		}
+
+		var patterns = _.chain(grunt.config.get('watch.all.files')).flatten().map(function (pattern) {
+			return grunt.config.process(pattern);
+		}).value();
+
+		var files = globule.find(patterns);
+
+		files.forEach(analyzeDependencies);
+
+		var recompile = {};
+		var onChange = grunt.util._.debounce(function () {
+			var files = Object.keys(recompile),
+				libs = grunt.file.match(grunt.config.get('defaultLib'), files),
+				tests = grunt.file.match(grunt.config.get('defaultTests'), files);
+
+			grunt.config.set('typescript.lib.src', libs);
+			grunt.config.set('typescript.tests.src', tests);
+
+			recompile = {};
+		}, 200);
+
+		grunt.event.on('watch', function (action, filepath, task) {
+			if (grunt.file.isFile(filepath)) {
+				recompile[filepath] = action;
+
+				analyzeDependencies(filepath, action);
+
+				getDependents(filepath).forEach(function (filepath) {
+					recompile[filepath] = true;
+				});
+			}
+			onChange();
+		});
+
+		grunt.task.run([ 'force:on', 'typescript', 'force:restore', 'watch' ]);
 	});
 };

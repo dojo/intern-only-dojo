@@ -4,8 +4,10 @@
   "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-contrib-clean": "~0.5.0",
-    "grunt-ts": "~1.5.0",
     "grunt-contrib-watch": "~0.5.3",
-    "intern": "git://github.com/theintern/intern#dcc1a8bcc6e3a1d38484e4c25912decb5001c0f0"
+    "intern": "git://github.com/theintern/intern#dcc1a8bcc6e3a1d38484e4c25912decb5001c0f0",
+    "grunt-typescript": "~0.2.7",
+    "lodash": "~2.4.1",
+    "globule": "~0.2.0"
   }
 }
