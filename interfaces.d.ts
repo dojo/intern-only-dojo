@@ -6,6 +6,34 @@ export interface Define {
 
 export declare var define: Define;
 
+export interface IDateObject {
+	dayOfMonth:number;
+	dayOfWeek:number;
+	daysInMonth:number;
+	hours:number;
+	isLeapYear:boolean;
+	milliseconds:number;
+	minutes:number;
+	month:number;
+	seconds:number;
+	year:number;
+}
+
+export interface IDateObjectArguments extends IDateObjectOperationArguments {
+	month:number;
+	year:number;
+}
+
+export interface IDateObjectOperationArguments {
+	dayOfMonth?:number;
+	hours?:number;
+	milliseconds?:number;
+	minutes?:number;
+	month?:number;
+	seconds?:number;
+	year?:number;
+}
+
 export interface IEvented {
 	on(type:string, listener:Function):IHandle;
 	emit(type:string, ...args:any[]):boolean;
