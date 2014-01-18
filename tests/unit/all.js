@@ -1,3 +1,4 @@
 define([
-	'./lang'
+	'./lang',
+	'./string'
 ], function () {});
