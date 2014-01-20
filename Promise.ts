@@ -12,8 +12,9 @@ has.add('dom-mutationobserver', (global) => {
 	return !!(global.MutationObserver || global.WebKitMutationObserver);
 });
 
-// TODO: This works, but should it?
-if (has('native-promise')) {
+// TODO: This works, but should it? Also, Chrome's Promise doesn't meet the
+// spec and accepts objects instead of rejecting
+/*if (has('native-promise')) {
 	return <{
 		new <T>(resolver:core.IPromiseResolver<T>):core.IPromise<T>;
 		all(iterable:any):core.IPromise<any[]>;
@@ -23,7 +24,7 @@ if (has('native-promise')) {
 		reject<T>(reason:any):core.IPromise<T>;
 		resolve<T>(value:T):core.IPromise<T>;
 	}>global.Promise;
-}
+}*/
 
 declare var process:any;
 
@@ -72,18 +73,18 @@ else {
 }
 
 interface IDeferred<T> {
-	promise:Promise<T>;
+	promise:core.IPromise<T>;
 	resolve:(value:T)=>void;
 	reject:(reason:any)=>void;
 }
 
 function getDeferred<T>(constructor:(resolver:core.IPromiseResolver<T>)=>core.IPromise<T>):IDeferred<T> {
 	var deferred = <IDeferred<T>>{},
-		promise = Object.create(Promise.prototype);
+		promise:core.IPromise<T> = Object.create(constructor.prototype);
 
 	var result:core.IPromise<T> = constructor.call(promise, (resolve:core.IPromiseFunction<T>, reject:core.IPromiseFunction<T>) => {
-		deferred.resolve = resolve;
-		deferred.reject = reject;
+		deferred.resolve = resolve.bind(undefined);
+		deferred.reject = reject.bind(undefined);
 	});
 
 	deferred.promise = typeof result === 'object' ? result : promise;
@@ -98,17 +99,10 @@ interface IResolutionHandler<T> {
 function makeResolutionHandler<T>(promise:core.IPromise<any>, fulfillmentHandler:any, rejectionHandler:any):IResolutionHandler<T> {
 	function F(value:any):any {
 		if (value === promise) {
-			return rejectionHandler.call(
-				undefined,
-				new TypeError('Tried to resolve a promise with itself')
-			);
+			return rejectionHandler(new TypeError('Tried to resolve a promise with itself'));
 		}
 
 		if (value && typeof value === 'object' && typeof value.then === 'function') {
-			if (value instanceof Promise) {
-				return value.then(fulfillmentHandler, rejectionHandler);
-			}
-
 			var deferred = getDeferred<T>((<any>promise).constructor);
 			try {
 				value.then(deferred.resolve, deferred.reject);
@@ -136,21 +130,26 @@ function executePromiseReaction(reaction:IReaction, argument:any) {
 		handlerResult:any;
 
 	try {
-		handlerResult = handler.call(undefined, argument);
+		handlerResult = handler(argument);
 	}
 	catch (handlerResultError) {
-		return deferred.reject.call(undefined, handlerResultError);
+		return deferred.reject(handlerResultError);
 	}
 
 	if (handlerResult === deferred.promise) {
-		return deferred.reject.call(undefined, new TypeError('Tried to resolve a promise with itself!'));
+		return deferred.reject(new TypeError('Tried to resolve a promise with itself!'));
 	}
 
 	if (typeof handlerResult === 'object' && handlerResult && typeof handlerResult.then === 'function') {
-		handlerResult.then(deferred.resolve, deferred.reject);
+		try {
+			handlerResult.then(deferred.resolve, deferred.reject);
+		}
+		catch (thenError) {
+			deferred.reject(thenError);
+		}
 	}
 	else {
-		return deferred.resolve.call(undefined, handlerResult);
+		return deferred.resolve(handlerResult);
 	}
 }
 
@@ -253,11 +252,14 @@ class Promise<T> implements core.IPromise<T> {
 	}
 
 	static all(iterable:any):Promise<any[]> {
-		var resolve:core.IPromiseFunction<any>, reject:core.IPromiseFunction<any>,
-			promise = new Promise((_resolve, _reject) => {
-				resolve = _resolve;
-				reject = _reject;
-			});
+		var C = this,
+			deferred = getDeferred<any[]>(<any>C);
+
+		if (!Array.isArray(iterable)) {
+			// In ES5, the only ES6-compatible iterable object is an Array
+			deferred.reject(new TypeError('Non-iterable passed to "all"'));
+			return deferred.promise;
+		}
 
 		var values:any[] = [],
 			index = 0,
@@ -271,19 +273,54 @@ class Promise<T> implements core.IPromise<T> {
 					values[index] = value;
 				}
 				catch (e) {
-					reject(e);
-					return promise;
+					deferred.reject(e);
+					return deferred.promise;
 				}
 
 				count -= 1;
 
 				if (count === 0) {
-					resolve(values);
+					deferred.resolve(values);
 				}
-			}).bind(null, index), reject);
+			}).bind(null, index), deferred.reject);
 
 			index += 1;
 			count += 1;
+		}
+
+		if (!iterable.length) {
+			deferred.resolve(values);
+		}
+		else {
+			iterable.forEach(thenNext);
+		}
+
+		return deferred.promise;
+	}
+
+	static cast<T>(value:T):Promise<T>;
+	static cast<T>(value:core.IPromise<T>):Promise<T>;
+	static cast<T>(value:any):Promise<T> {
+		var C = this;
+
+		if (value instanceof Promise) {
+			if (value.constructor === C) {
+				return value;
+			}
+		}
+
+		var deferred = getDeferred<T>(<any>C);
+		deferred.resolve(value);
+		return deferred.promise;
+	}
+
+	static race(iterable:any):Promise<any> {
+		var C = this,
+			deferred = getDeferred<any>(<any>C);
+
+		function thenNext<T>(value:T) {
+			var nextPromise = Promise.cast<T>(value);
+			nextPromise.then(deferred.resolve, deferred.reject);
 		}
 
 		if (Array.isArray(iterable)) {
@@ -295,48 +332,27 @@ class Promise<T> implements core.IPromise<T> {
 			}
 		}
 
-		return promise;
-	}
-
-	static cast<T>(value:T):Promise<T>;
-	static cast<T>(value:core.IPromise<T>):Promise<T>;
-	static cast<T>(value:any):Promise<T> {
-		if (value instanceof Promise) {
-			return value;
-		}
-		return new Promise<T>((resolve) => {
-			resolve(value);
-		});
-	}
-
-	static race(iterable:any):Promise<any> {
-		return new Promise((resolve, reject) => {
-			function thenNext<T>(value:T) {
-				var nextPromise = Promise.cast<T>(value);
-				nextPromise.then(resolve, reject);
-			}
-
-			if (Array.isArray(iterable)) {
-				iterable.forEach(thenNext);
-			}
-			else {
-				for (var property in iterable) {
-					thenNext(iterable[property]);
-				}
-			}
-		});
+		return deferred.promise;
 	}
 
 	static reject<T>(reason:any):Promise<T> {
-		return new Promise<T>((resolve, reject) => {
-			reject(reason);
-		});
+		var C = this,
+			deferred = getDeferred<T>(<any>C);
+
+		deferred.reject(reason);
+
+		return deferred.promise;
 	}
 
-	static resolve<T>(value:T):Promise<T> {
-		return new Promise<T>((resolve, reject) => {
-			resolve(value);
-		});
+	static resolve<T>(value:core.IPromise<T>):Promise<T>;
+	static resolve<T>(value:T):Promise<T>;
+	static resolve<T>(value:any):Promise<T> {
+		var C = this,
+			deferred = getDeferred<T>(<any>C);
+
+		deferred.resolve(value);
+
+		return deferred.promise;
 	}
 }
 
