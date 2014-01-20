@@ -102,7 +102,7 @@ module.exports = function (grunt) {
 	grunt.registerTask('build', [ 'typescript:lib' ]);
 
 	grunt.registerTask('test', function (target) {
-		if (!target || target === 'coverage' || target === 'nocompile') {
+		if (!target || target === 'coverage' || target === 'compile') {
 			target = 'remote';
 		}
 
@@ -124,7 +124,7 @@ module.exports = function (grunt) {
 			addReporter('console');
 		}
 
-		if (this.flags.recompile) {
+		if (this.flags.compile) {
 			grunt.task.run('typescript');
 		}
 		grunt.task.run('intern:' + target);
