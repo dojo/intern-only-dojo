@@ -3,7 +3,10 @@ import core = require('./interfaces');
 declare var process:any;
 declare var require:core.Require;
 
-var has = <core.IHas>require.has;
+// The following interface will export because it has the
+// same name as the variable being exported
+interface has extends core.IHas, core.ILoaderPluginFunction {}
+var has:has = <any>require.has;
 
 if (!has) {
 	has = (() => {
@@ -12,7 +15,7 @@ if (!has) {
 			document = global.document,
 			element = document && document.createElement('DiV');
 
-		var has = <core.IHas>function(feature:string):any {
+		var has:has = <any>function(feature:string):any {
 			return typeof hasCache[feature] === 'function' ? (hasCache[feature] = hasCache[feature](global, document, element)) : hasCache[feature];
 		};
 		has.add = function (feature:string, test:any, now?:boolean, force?:boolean):void {

@@ -39,7 +39,7 @@ if (!ready) {
 	});
 }
 
-var domReady = <core.ILoaderFunctionPlugin>function domReady(callback:Function) {
+var domReady:core.ILoaderPluginFunction = <any>function domReady(callback:Function) {
 	readyQueue.push(callback);
 	if (ready) {
 		processQueue();

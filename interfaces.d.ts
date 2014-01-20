@@ -47,19 +47,19 @@ export interface IHandle {
 	remove():void;
 }
 
-export interface IHas extends ILoaderFunctionPlugin {
+export interface IHas {
 	(feature:string):any;
 	add(feature:string, test:(global:any, document:Document, element:HTMLElement)=>boolean, now?:boolean, force?:boolean):void;
 	add(feature:string, test:boolean, now?:boolean, force?:boolean):void;
 }
 
-export interface ILoaderFunctionPlugin extends ILoaderPlugin {
-	(...args:any[]):any;
-}
-
 export interface ILoaderPlugin {
 	normalize?(id:string, normalize:Function):string;
 	load(id:string, parentRequire:Require, loaded:Function, config?:any):void;
+}
+
+export interface ILoaderPluginFunction extends ILoaderPlugin {
+	(...args:any[]):any;
 }
 
 export interface IOn {
@@ -104,10 +104,7 @@ export interface Require {
 	(modules:string[]):void;
 	(modules:string[], factory:Function):void;
 	(moduleName:string):any;
-	has: {
-		(feature:string):any;
-		add(feature:string, test:any, now?:boolean, force?:boolean):void;
-	}
+	has: IHas;
 	toUrl: (moduleId:string)=>string;
 	nodeRequire: (moduleId:string)=>any;
 }
