@@ -1,15 +1,10 @@
 import core = require('./interfaces');
 import has = require('./has');
+import nextTick = require('./nextTick');
 
 var global = (function () { return this; })();
 has.add('native-promise', (global) => {
 	return typeof global.Promise !== 'undefined';
-});
-has.add('dom-mutationobserver', (global) => {
-	if (!has('host-browser')) {
-		return;
-	}
-	return !!(global.MutationObserver || global.WebKitMutationObserver);
 });
 
 // TODO: This works, but should it? Also, Chrome's Promise doesn't meet the
@@ -25,52 +20,6 @@ has.add('dom-mutationobserver', (global) => {
 		resolve<T>(value:T):core.IPromise<T>;
 	}>global.Promise;
 }*/
-
-declare var process:any;
-
-var queueMicrotask:(microtask:Function, argumentsList:any[]) => void,
-	bind = Function.prototype.bind;
-
-if (has('host-node')) {
-	queueMicrotask = (microtask:Function, argumentsList:any[]) => {
-		process.nextTick(bind.apply(microtask, [undefined].concat(argumentsList)));;
-	};
-}
-else if (has('dom-mutationobserver')) {
-	queueMicrotask = (function () {
-		var MutationObserver = this.MutationObserver || this.WebKitMutationObserver,
-			callbacks:Function[] = [];
-
-		var observer = new MutationObserver(() => {
-			var callback = callbacks.shift();
-			if (callback) {
-				callback();
-			}
-			if (callbacks.length) {
-				element.setAttribute('drainQueue', 'drainQueue');
-			}
-		});
-
-		var element = document.createElement('div');
-		observer.observe(element, { attributes: true });
-
-		// Chrome Memory Leak: https://bugs.webkit.org/show_bug.cgi?id=93661
-		this.addEventListener('unload', () => {
-			observer.disconnect();
-			observer = element = null;
-		});
-
-		return (microtask:Function, argumentsList:any[]) => {
-			callbacks.push(bind.apply(microtask, [undefined].concat(argumentsList)));
-			element.setAttribute('drainQueue', 'drainQueue');
-		};
-	})();
-}
-else {
-	queueMicrotask = (microtask:Function, argumentsList:any[]) => {
-		setTimeout(bind.apply(microtask, [undefined].concat(argumentsList)), 0);
-	};
-}
 
 interface IDeferred<T> {
 	promise:core.IPromise<T>;
@@ -153,10 +102,6 @@ function executePromiseReaction(reaction:IReaction, argument:any) {
 	}
 }
 
-function isObject(value:any):boolean {
-	return (typeof value === 'object' && value !== null) || typeof value === 'function';
-}
-
 var identity = (value:any):any => {
 	return value;
 };
@@ -179,7 +124,7 @@ class Promise<T> implements core.IPromise<T> {
 			status = newStatus;
 			result = newResult;
 			reactions.forEach((reaction) => {
-				queueMicrotask(executePromiseReaction, [reaction, newResult]);
+				nextTick(executePromiseReaction.bind(null, reaction, newResult));
 			});
 			reactions = undefined;
 		}
@@ -226,10 +171,10 @@ class Promise<T> implements core.IPromise<T> {
 				rejectReactions.push(rejectionReaction);
 			} 
 			else if (status === 'has-resolution') {
-				queueMicrotask(executePromiseReaction, [resolutionReaction, result]);
+				nextTick(executePromiseReaction.bind(null, resolutionReaction, result));
 			}
 			else if (status === 'has-rejection') {
-				queueMicrotask(executePromiseReaction, [rejectionReaction, result]);
+				nextTick(executePromiseReaction.bind(null, rejectionReaction, result));
 			}
 
 			return deferred.promise;

@@ -5,6 +5,25 @@ import core = require('../../interfaces');
 import Promise = require('../../Promise');
 import registerSuite = require('intern!object');
 
+class MyPromise<T> extends Promise<T> {
+	catch<U>(onRejected:(reason:any)=>U):MyPromise<U>;
+	catch<U>(onRejected:(reason:any)=>core.IPromise<U>):MyPromise<U>;
+	catch<U>(onRejected:(reason:any)=>any):MyPromise<U> {
+		return this.then<U>(undefined, onRejected);
+	}
+
+	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):MyPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>core.IPromise<U>):MyPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>U):MyPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>core.IPromise<U>):MyPromise<U>;
+	then<U>(onFulfilled?:(value:T)=>any, onRejected?:(reason:any)=>any):MyPromise<U> {
+		throw new Error('"then" has not been implemented');
+	}
+}
+
+MyPromise.resolve = Promise.resolve;
+MyPromise.cast = Promise.cast;
+
 registerSuite({
 	name: 'Promise',
 
@@ -12,7 +31,17 @@ registerSuite({
 		'fulfillment': function () {
 			var dfd = this.async();
 
-			Promise.resolve(5).then(dfd.callback(function (value:number) {
+			Promise.resolve(5).then(dfd.callback((value:number) => {
+				assert.strictEqual(value, 5);
+			}));
+		},
+
+		'identity': function () {
+			var dfd = this.async();
+
+			Promise.resolve(5).then(null, dfd.rejectOnError((value:Error) => {
+				assert(false, 'Should not have resolved');
+			})).then(dfd.callback((value:number) => {
 				assert.strictEqual(value, 5);
 			}));
 		},
@@ -27,7 +56,7 @@ registerSuite({
 				};
 
 			var calledAlready = false;
-			Promise.resolve<any>(evilPromise).then(dfd.rejectOnError(function (value:number) {
+			Promise.resolve<any>(evilPromise).then(dfd.rejectOnError((value:number) => {
 				assert.strictEqual(calledAlready, false);
 				calledAlready = true;
 				assert.strictEqual(value, 1);
@@ -51,6 +80,136 @@ registerSuite({
 					assert.instanceOf(error, TypeError);
 				})
 			);
+		}
+	},
+
+	'#catch': {
+		'rejection': function () {
+			var dfd = this.async();
+
+			var error = new Error('foo');
+			Promise.reject(error).catch(dfd.callback(function (err:Error) {
+				assert.strictEqual(err, error);
+			}));
+		},
+
+		'identity': function () {
+			var dfd = this.async();
+
+			var error = new Error('foo');
+			Promise.reject(error).then(dfd.rejectOnError(() => {
+				assert(false, 'Should not be resolved');
+			})).catch(dfd.callback((err:Error) => {
+				assert.strictEqual(err, error);
+			}));
+		},
+
+		'resolver throws': function () {
+			var dfd = this.async();
+
+			var error = new Error('foo');
+			var promise = new Promise(function () {
+				throw error;
+			});
+
+			promise.catch(dfd.callback((err:Error) => {
+				assert.strictEqual(err, error);
+			}));
+		},
+
+		'handler throws': function () {
+			var dfd = this.async();
+
+			var error = new Error('foo');
+			Promise.resolve(5).then(() => {
+				throw error;
+			}).catch(dfd.callback((err:Error) => {
+					assert.strictEqual(err, error);
+			}));
+		},
+
+		'then throws': {
+			'from resolver': function () {
+				var dfd = this.async(),
+					error = new Error('foo'),
+					foreign:core.IPromise<void> = <any>{
+						then: function (f:Function) {
+							throw error;
+						}
+					};
+
+				var promise = new Promise((resolve) => {
+					resolve(foreign);
+				});
+				promise.catch(dfd.callback((err:Error) => {
+					assert.strictEqual(err, error);
+				}));
+			},
+			'from handler': function () {
+				var dfd = this.async(),
+					error = new Error('foo'),
+					foreign:core.IPromise<void> = <any>{
+						then: function (f:Function) {
+							throw error;
+						}
+					};
+
+				Promise.resolve(5).then(() => {
+					return foreign;
+				}).catch(dfd.callback((err:Error) => {
+					assert.strictEqual(err, error);
+				}));
+			}
+		}
+	},
+
+	'.cast': {
+		'value': function () {
+			var dfd = this.async();
+
+			var promise = Promise.cast(5);
+
+			promise.then(dfd.callback((value:number) => {
+				assert.instanceOf(promise, Promise);
+				assert.strictEqual(value, 5);
+			}));
+		},
+
+		'promise': function () {
+			var dfd = this.async(),
+				promise = Promise.resolve(5);
+
+			var casted = Promise.cast(promise);
+
+			promise.then(dfd.callback((value:number) => {
+				assert.strictEqual(casted, promise);
+				assert.strictEqual(value, 5);
+			}));
+		},
+
+		'inherited promise': function () {
+			var dfd = this.async(),
+				promise = MyPromise.resolve(5);
+
+			var casted = Promise.cast(promise);
+
+			promise.then(dfd.callback((value:number) => {
+				assert.notStrictEqual(casted, promise);
+				assert.strictEqual(value, 5);
+			}));
+		},
+
+		'generic': function () {
+			var dfd = this.async(),
+				promise = MyPromise.resolve(5);
+
+			var casted = MyPromise.cast(promise);
+
+			promise.then(dfd.callback((value:number) => {
+				assert.instanceOf(casted, MyPromise);
+				assert.strictEqual(casted, promise);
+				assert.strictEqual(value, 5);
+			}));
 		}
 	},
 
