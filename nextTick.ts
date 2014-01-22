@@ -1,4 +1,3 @@
-import array = require('./array');
 import CallbackQueue = require('./CallbackQueue');
 import core = require('./interfaces');
 import has = require('./has');
