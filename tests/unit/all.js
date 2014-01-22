@@ -3,5 +3,6 @@ define([
 	'./DateObject',
 	'./lang',
 	'./Promise',
+	'./nextTick',
 	'./string'
 ], function () {});
