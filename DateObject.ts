@@ -5,16 +5,8 @@ var days = [null, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
 					   'seconds', 'milliseconds' ];
 
 function isLeapYear(year:number):boolean {
-	if (year % 400 === 0) {
-		return true;
-	}
-	if (year % 100 === 0) {
-		return false;
-	}
-	if (year % 4 === 0) {
-		return true;
-	}
-	return false;
+	var date = new Date(year, 1, 29);
+	return date.getDate() === 29;
 }
 
 class DateObject implements core.IDateObject {
