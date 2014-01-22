@@ -1,4 +1,5 @@
 define([
+	'./CallbackQueue',
 	'./DateObject',
 	'./lang',
 	'./Promise',
