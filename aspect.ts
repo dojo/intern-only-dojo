@@ -80,7 +80,7 @@ function getDispatcher(target:any, methodName:string):IDispatcher {
 
 	if (!existing || existing.target !== target) {
 		// no dispatcher
-		target[methodName] = dispatcher = <IDispatcher>(() => {
+		target[methodName] = dispatcher = <IDispatcher>(function () {
 			var executionId = nextId,
 				args = arguments,
 				results:any,
@@ -138,7 +138,7 @@ export interface IAroundFactory {
 export function around(target:any, methodName:string, advice:IAroundFactory):core.IHandle {
 	var dispatcher = getDispatcher(target, methodName),
 		previous = dispatcher.around,
-		advised = advice(() => {
+		advised = advice(function () {
 			return previous.advice(this, arguments);
 		});
 
