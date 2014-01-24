@@ -1,10 +1,13 @@
+import array = require('./array');
 import core = require('./interfaces');
 
+interface IPair<T extends core.IRegistryMatcher, U> {
+	match:T;
+	value:U;
+}
+
 class Registry<T extends core.IRegistryMatcher, U> {
-	private _pairs:Array<{
-		match:T;
-		value:U;
-	}> = [];
+	private _pairs:IPair<T, U>[] = [];
 	private _defaultValue:U;
 
 	constructor(defaultValue?:U) {
@@ -14,28 +17,24 @@ class Registry<T extends core.IRegistryMatcher, U> {
 	}
 
 	register(matcher:T, value:U, first?:boolean):core.IHandle {
-		var pair = {
+		var pair:IPair<T, U> = {
 			match: matcher,
 			value: value
 		};
 		this._pairs[first ? 'unshift' : 'push'](pair);
 
-		var handle = {
-			remove: () => {
-				handle.remove = () => {};
-				var idx:number;
-				if ((idx = this._pairs.indexOf(pair)) > -1) {
-					this._pairs.splice(idx, 1);
-				}
-				handle = pair = null;
+		return {
+			remove: function () {
+				this.remove = () => {};
+				array.remove(this._pairs, pair);
+				matcher = value = pair = null;
 			}
 		};
-		return handle;
 	}
 
 	match(...args:any[]):U {
 		var pairs = this._pairs.slice(0),
-			pair:{ match: T; value: U; };
+			pair:IPair<T, U>;
 
 		for (var i = 0; (pair = this._pairs[i]); i++) {
 			if (pair.match.apply(null, args)) {
