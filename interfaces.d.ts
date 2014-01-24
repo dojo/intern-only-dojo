@@ -62,6 +62,14 @@ export interface ILoaderPluginFunction extends ILoaderPlugin {
 	(...args:any[]):any;
 }
 
+export interface IObservable {
+	observe(property:string, callback:IObservableCallback):IHandle;
+}
+
+export interface IObservableCallback {
+	(newValue: any, oldValue:any):void;
+}
+
 export interface IOn {
 	(target:HTMLElement, type:string, listener:Function, capture?:boolean):IHandle;
 	(target:HTMLElement, type:IExtensionEvent, listener:Function, capture?:boolean):IHandle;

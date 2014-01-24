@@ -123,6 +123,10 @@ export function deepDelegate(origin:any, properties:any = null):any {
 	return deepMixin<any>(destination, properties);
 }
 
+export function isEqual(a:any, b:any):boolean {
+	return a === b || /* both values are NaN */ (a !== a && b !== b);
+}
+
 export function getPropertyDescriptor(object:any, property:string):PropertyDescriptor {
 	var descriptor:PropertyDescriptor;
 
