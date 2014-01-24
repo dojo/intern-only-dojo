@@ -122,3 +122,19 @@ export function deepDelegate(origin:any, properties:any = null):any {
 	}
 	return deepMixin<any>(destination, properties);
 }
+
+export function getPropertyDescriptor(object:any, property:string):PropertyDescriptor {
+	var descriptor:PropertyDescriptor;
+
+	while (object) {
+		descriptor = Object.getOwnPropertyDescriptor(object, property);
+
+		if (descriptor) {
+			return descriptor;
+		}
+
+		object = Object.getPrototypeOf(object);
+	}
+
+	return null;
+}

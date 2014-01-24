@@ -274,5 +274,26 @@ registerSuite({
 		assert(!dest.hasOwnProperty('property'));
 		assert(dest.subObject.hasOwnProperty('otherProperty'));
 		assert(!dest.subObject.hasOwnProperty('property'));
+	},
+
+	'.getPropertyDescriptor': function () {
+		var foo = 1;
+		var prototype = {
+			get foo() {
+				return foo;
+			},
+			set foo(value:number) {
+				foo = value;
+			}
+		};
+		var prototype2 = Object.create(prototype),
+			object = Object.create(prototype2);
+
+		var descriptor = lang.getPropertyDescriptor(object, 'foo'),
+			expected = Object.getOwnPropertyDescriptor(prototype, 'foo');
+
+		assert.ok(!Object.getOwnPropertyDescriptor(object, 'foo'));
+		assert.ok(descriptor);
+		assert.deepEqual(descriptor, expected);
 	}
 });
