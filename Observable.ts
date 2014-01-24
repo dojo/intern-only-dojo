@@ -34,15 +34,15 @@ class Observable implements core.IObservable {
 				value: null,
 				writable: true
 			},
-			dispatch: {
+			_dispatch: {
 				configurable: true,
-				value: this.dispatch.bind(this),
+				value: this._dispatch.bind(this),
 				writable: true
 			}
 		});
 	}
 
-	private dispatch() {
+	private _dispatch() {
 		if (this._timer) {
 			this._timer.remove();
 			this._timer = null;
@@ -63,6 +63,35 @@ class Observable implements core.IObservable {
 					callback.callback.call(this, notification.newValue, notification.oldValue);
 				}
 			}
+		}
+	}
+
+	private _notify(property:string, newValue:any, oldValue:any) {
+		var callbacks = this._callbacks[property];
+		if (!callbacks || !callbacks.length) {
+			return;
+		}
+
+		var notification = this._notifications[property];
+
+		if (notification) {
+			if (lang.isEqual(notification.oldValue, newValue)) {
+				notification = this._notifications[property] = null;
+			}
+			else {
+				notification.newValue = newValue;
+			}
+		}
+		else if (!lang.isEqual(newValue, oldValue)) {
+			this._notifications[property] = {
+				newValue: newValue,
+				oldValue: oldValue,
+				callbacks: callbacks.slice(0)
+			};
+		}
+
+		if (!this._timer) {
+			this._timer = Scheduler.schedule(this._dispatch);
 		}
 	}
 
@@ -91,7 +120,7 @@ class Observable implements core.IObservable {
 							return;
 						}
 
-						this.notify(property, value, oldValue);
+						this._notify(property, value, oldValue);
 						oldDescriptor.set.call(this, value);
 					};
 				}
@@ -107,7 +136,7 @@ class Observable implements core.IObservable {
 						if (lang.isEqual(value, newValue)) {
 							return;
 						}
-						this.notify(property, newValue, value);
+						this._notify(property, newValue, value);
 						value = newValue;
 					};
 				}
@@ -130,35 +159,6 @@ class Observable implements core.IObservable {
 				array.remove(self._callbacks[property], callbackObject);
 			}
 		};
-	}
-
-	private notify(property:string, newValue:any, oldValue:any) {
-		var callbacks = this._callbacks[property];
-		if (!callbacks || !callbacks.length) {
-			return;
-		}
-
-		var notification = this._notifications[property];
-
-		if (notification) {
-			if (lang.isEqual(notification.oldValue, newValue)) {
-				notification = this._notifications[property] = null;
-			}
-			else {
-				notification.newValue = newValue;
-			}
-		}
-		else if (!lang.isEqual(newValue, oldValue)) {
-			this._notifications[property] = {
-				newValue: newValue,
-				oldValue: oldValue,
-				callbacks: callbacks.slice(0)
-			};
-		}
-
-		if (!this._timer) {
-			this._timer = Scheduler.schedule(this.dispatch);
-		}
 	}
 }
 
