@@ -14,7 +14,7 @@ registerSuite({
 		var date = new Date(),
 			object = new DateObject();
 
-		assert.closeTo(object.valueOf(), +date, 10);
+		assert.closeTo(object.valueOf(), +date, 100);
 
 		object = new DateObject(date);
 		assert.strictEqual(object.valueOf(), +date);
