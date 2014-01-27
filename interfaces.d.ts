@@ -75,12 +75,16 @@ export interface IOn {
 	(target:HTMLElement, type:IExtensionEvent, listener:Function, capture?:boolean):IHandle;
 	(target:IEvented, type:string, listener:Function, capture?:boolean):IHandle;
 	(target:IEvented, type:IExtensionEvent, listener:Function, capture?:boolean):IHandle;
-	parse(target:HTMLElement, type:string, listener:Function, context:any, addListener:Function, capture?:boolean):IHandle;
-	parse(target:HTMLElement, type:IExtensionEvent, listener:Function, context:any, addListener:Function, capture?:boolean):IHandle;
-	parse(target:IEvented, type:string, listener:Function, context:any, addListener:Function, capture?:boolean):IHandle;
-	parse(target:IEvented, type:IExtensionEvent, listener:Function, context:any, addListener:Function, capture?:boolean):IHandle;
+	parse(target:HTMLElement, type:string, listener:Function, context:any, addListener:IOnAddListener, capture?:boolean):IHandle;
+	parse(target:HTMLElement, type:IExtensionEvent, listener:Function, context:any, addListener:IOnAddListener, capture?:boolean):IHandle;
+	parse(target:IEvented, type:string, listener:Function, context:any, addListener:IOnAddListener, capture?:boolean):IHandle;
+	parse(target:IEvented, type:IExtensionEvent, listener:Function, context:any, addListener:IOnAddListener, capture?:boolean):IHandle;
 	emit(target:HTMLElement, type:string, event:any):boolean;
 	emit(target:IEvented, type:string, event:any):boolean;
+}
+
+export interface IOnAddListener {
+	(target:any, type:string, listener:Function, capture?:boolean):IHandle;
 }
 
 export interface IPromise<T> {

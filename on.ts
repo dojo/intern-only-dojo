@@ -18,7 +18,7 @@ function addListener(target:any, type:string, listener:Function, capture?:boolea
 	throw new Error('Target must be an event emitter');
 }
 
-var on = <core.IOn>function (target:any, type:any, listener:Function, capture?:boolean):core.IHandle {
+var on:core.IOn = <any>function (target:any, type:any, listener:Function, capture?:boolean):core.IHandle {
 	if (typeof target.on === 'function' && typeof type !== 'function' && !target.nodeType) {
 		return target.on(type, listener, capture);
 	}
@@ -26,24 +26,23 @@ var on = <core.IOn>function (target:any, type:any, listener:Function, capture?:b
 	return on.parse(target, type, listener, this, addListener, capture);
 }
 
-function parse(target:any, type:any, listener:Function, context:any, addListener:Function, capture?:boolean):core.IHandle {
+function parse(target:any, type:any, listener:Function, context:any, addListener:core.IOnAddListener, capture?:boolean):core.IHandle {
 	if (type.call) {
 		return type.call(context, target, listener, capture);
 	}
 	if (type.indexOf(',') > -1) {
 		var events = type.split(/\s*,\s*/),
-			handles = events.map((eventName:string) => {
+			handles:core.IHandle[] = events.map((eventName:string) => {
 				return addListener(target, eventName, listener, capture);
-			}),
-			handle = {
-				remove: () => {
-					handle.remove = () => {};
-					handles.forEach((handle:core.IHandle) => {
-						handle.remove();
-					});
-				}
-			};
-		return handle;
+			});
+		return {
+			remove: function () {
+				this.remove = () => {};
+				handles.forEach((handle:core.IHandle) => {
+					handle.remove();
+				});
+			}
+		};
 	}
 	return addListener(target, type, listener, capture);
 }
@@ -67,7 +66,6 @@ function emit(target:any, type:string, event:any):boolean {
 	}
 	throw new Error('Target must be an event emitter');
 }
-
 on.emit = emit;
 
 export = on;
