@@ -12,6 +12,8 @@ class Scheduler {
 	schedule(callback:() => void):core.IHandle {
 		var handle = this._callbacks.add(callback);
 
+		// Scheduled callbacks can schedule more callbacks, but the added callbacks
+		// will be run in a subsequent turn
 		nextTick(() => {
 			this._callbacks.drain();
 		});

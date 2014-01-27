@@ -30,6 +30,8 @@ class CallbackQueue<T extends Function> {
 			item:IQueueItem<T>,
 			callback:T;
 
+		// Any callbacks added after drain is called will be processed
+		// the next time drain is called
 		this._callbacks = [];
 
 		for (var i = 0; i < callbacks.length; i++) {
