@@ -1,3 +1,5 @@
+import has = require('./has/es6');
+
 var slice = Array.prototype.slice;
 
 function getDottedProperty(object:any, parts:string[], create:boolean):any {
@@ -127,18 +129,25 @@ export function isEqual(a:any, b:any):boolean {
 	return a === b || /* both values are NaN */ (a !== a && b !== b);
 }
 
-export function getPropertyDescriptor(object:any, property:string):PropertyDescriptor {
-	var descriptor:PropertyDescriptor;
+export var getPropertyDescriptor:(object:any, property:string) => PropertyDescriptor;
 
-	while (object) {
-		descriptor = Object.getOwnPropertyDescriptor(object, property);
+if (has('es6-getpropertydescriptor')) {
+	getPropertyDescriptor = (<any>Object).getPropertyDescriptor;
+}
+else {
+	getPropertyDescriptor = (object:any, property:string):PropertyDescriptor => {
+		var descriptor:PropertyDescriptor;
 
-		if (descriptor) {
-			return descriptor;
+		while (object) {
+			descriptor = Object.getOwnPropertyDescriptor(object, property);
+
+			if (descriptor) {
+				return descriptor;
+			}
+
+			object = Object.getPrototypeOf(object);
 		}
 
-		object = Object.getPrototypeOf(object);
-	}
-
-	return null;
+		return null;
+	};
 }
