@@ -4,7 +4,6 @@ import has = require('./has');
 
 declare var process:any;
 
-var global = (function () { return this; })();
 has.add('dom-mutationobserver', (global) => {
 	if (!has('host-browser')) {
 		return;
@@ -34,45 +33,52 @@ if (has('host-node')) {
 		};
 	};
 }
-else if (has('dom-mutationobserver')) {
-	nextTick = (function () {
-		var MutationObserver = this.MutationObserver || this.WebKitMutationObserver,
-			queue = new CallbackQueue<() => void>();
-
-		var observer = new MutationObserver(() => {
-			queue.drain();
-		});
-
-		var element = document.createElement('div');
-		observer.observe(element, { attributes: true });
-
-		// Chrome Memory Leak: https://bugs.webkit.org/show_bug.cgi?id=93661
-		this.addEventListener('unload', () => {
-			observer.disconnect();
-			observer = element = null;
-		});
-
-		return (callback:() => void):core.IHandle => {
-			var handle = queue.add(callback);
-
-			element.setAttribute('drainQueue', '1');
-
-			return handle;
-		};
-	})();
-}
 else {
-	nextTick = (callback:() => void):core.IHandle => {
-		var timeout = setTimeout(callback, 0);
+	var queue = new CallbackQueue<() => void>();
 
-		return {
-			remove: function () {
-				this.remove = noop;
-				clearTimeout(timeout);
-				timeout = null;
-			}
-		};
-	};
+	if (has('dom-mutationobserver')) {
+		nextTick = (function () {
+			var MutationObserver = this.MutationObserver || this.WebKitMutationObserver,
+				element = document.createElement('div'),
+				observer = new MutationObserver(() => {
+					queue.drain();
+				});
+
+			observer.observe(element, { attributes: true });
+
+			// Chrome Memory Leak: https://bugs.webkit.org/show_bug.cgi?id=93661
+			this.addEventListener('unload', () => {
+				observer.disconnect();
+				observer = element = null;
+			});
+
+			return (callback:() => void):core.IHandle => {
+				var handle = queue.add(callback);
+
+				element.setAttribute('drainQueue', '1');
+
+				return handle;
+			};
+		})();
+	}
+	else {
+		nextTick = (() => {
+			var timeout:number = null;
+			return (callback:() => void):core.IHandle => {
+				var handle = queue.add(callback);
+
+				if (!timeout) {
+					timeout = setTimeout(() => {
+						clearTimeout(timeout);
+						timeout = null;
+						queue.drain();
+					}, 0);
+				}
+
+				return handle;
+			};
+		})();
+	}
 }
 
 export = nextTick;
