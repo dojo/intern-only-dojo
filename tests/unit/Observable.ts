@@ -44,7 +44,7 @@ registerSuite({
 			observable.observe('foo', dfd.callback((value:string, oldValue:string) => {
 				assert.strictEqual(value, 'thonk');
 				assert.strictEqual(oldValue, 'bar');
-			}), false);
+			}));
 
 			observable.foo = 'thonk';
 		},
@@ -59,7 +59,7 @@ registerSuite({
 			observable.observe('foo', dfd.callback((value:string, oldValue:string) => {
 				assert.strictEqual(value, 'baz');
 				assert.strictEqual(oldValue, 'bar');
-			}), false);
+			}));
 
 			observable.foo = 'baz';
 		},
@@ -73,7 +73,7 @@ registerSuite({
 
 			observable.observe('foo', dfd.rejectOnError(() => {
 				assert(false, 'Should not have been called');
-			}), false).remove();
+			})).remove();
 
 			setTimeout(dfd.callback(() => {}), 500);
 			observable.foo = 'thonk';
@@ -89,7 +89,7 @@ registerSuite({
 			observable.foo = 'thonk';
 			observable.observe('foo', dfd.rejectOnError(() => {
 				assert(false, 'Should not have been called');
-			}), false);
+			}));
 
 			setTimeout(dfd.callback(() => {}), 500);
 		},
@@ -103,7 +103,7 @@ registerSuite({
 
 			var handle = observable.observe('foo', dfd.rejectOnError(() => {
 				assert(false, 'Should not have been called');
-			}), false);
+			}));
 			observable.foo = 'thonk';
 			handle.remove();
 
@@ -119,7 +119,7 @@ registerSuite({
 
 			observable.observe('foo', dfd.rejectOnError(() => {
 				assert(false, 'Should not have been called');
-			}), false);
+			}));
 			observable.foo = 'thonk';
 			observable.foo = 'bar';
 
@@ -135,7 +135,7 @@ registerSuite({
 			observable.observe('foo', dfd.callback((newValue:string, oldValue:string) => {
 				assert.strictEqual(newValue, 'baz');
 				assert.strictEqual(oldValue, 'bar');
-			}), false);
+			}));
 			observable.foo = 'thonk';
 			observable.foo = 'bar';
 			observable.foo = 'baz';

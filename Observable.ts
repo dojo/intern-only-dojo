@@ -14,6 +14,10 @@ interface INotification {
 	callbacks:Array<ICallbackObject>;
 }
 
+// TODO: `informImmediately` is a strange beast, but something that is useful.
+// I need to experiment with a different mechanism for calling the observer
+// initially than providing a boolean parameter to `observe()`.
+
 class Observable implements core.IObservable {
 	private _callbacks: { [property:string]:ICallbackObject[] };
 	private _notifications: { [property:string]:INotification };
@@ -77,7 +81,7 @@ class Observable implements core.IObservable {
 		return lang.isEqual(a, b);
 	}
 
-	private _notify(property:string, newValue:any, oldValue:any) {
+	private _notify<T>(property:string, newValue:T, oldValue:T):void {
 		var callbacks = this._callbacks[property];
 		if (!callbacks || !callbacks.length) {
 			return;
@@ -103,9 +107,7 @@ class Observable implements core.IObservable {
 		}
 	}
 
-	// TODO: informImmediately is a horrible name
-	// TODO: Should informImmediately default to true?
-	observe<T>(property:string, callback:core.IObserver<T>, informImmediately:boolean = true):core.IHandle {
+	observe<T>(property:string, callback:core.IObserver<T>):core.IHandle {
 		var callbackObject:ICallbackObject = {
 			callback: callback
 		};
@@ -149,11 +151,6 @@ class Observable implements core.IObservable {
 		}
 		else {
 			this._callbacks[property].push(callbackObject);
-		}
-
-		if (informImmediately) {
-			// TODO: Should informing be done same-turn or next-turn?
-			callback.call(this, this[property]);
 		}
 
 		var self = this;
