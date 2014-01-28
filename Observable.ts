@@ -5,7 +5,7 @@ import Scheduler = require('./Scheduler');
 
 interface ICallbackObject {
 	removed?:boolean;
-	callback:core.IObservableCallback;
+	callback:core.IObserver<any>;
 }
 
 interface INotification {
@@ -105,7 +105,7 @@ class Observable implements core.IObservable {
 
 	// TODO: informImmediately is a horrible name
 	// TODO: Should informImmediately default to true?
-	observe(property:string, callback:core.IObservableCallback, informImmediately:boolean = true):core.IHandle {
+	observe<T>(property:string, callback:core.IObserver<T>, informImmediately:boolean = true):core.IHandle {
 		var callbackObject:ICallbackObject = {
 			callback: callback
 		};

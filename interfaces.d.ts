@@ -63,11 +63,11 @@ export interface ILoaderPluginFunction extends ILoaderPlugin {
 }
 
 export interface IObservable {
-	observe(property:string, callback:IObservableCallback, informImmediately?:boolean):IHandle;
+	observe<T>(property:string, callback:IObserver<T>, informImmediately?:boolean):IHandle;
 }
 
-export interface IObservableCallback {
-	(newValue: any, oldValue:any):void;
+export interface IObserver<T> {
+	(newValue:T, oldValue:T):void;
 }
 
 export interface IOn {
