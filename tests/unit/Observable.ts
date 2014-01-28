@@ -44,7 +44,7 @@ registerSuite({
 			observable.observe('foo', dfd.callback((value:string, oldValue:string) => {
 				assert.strictEqual(value, 'thonk');
 				assert.strictEqual(oldValue, 'bar');
-			}));
+			}), false);
 
 			observable.foo = 'thonk';
 		},
@@ -59,7 +59,7 @@ registerSuite({
 			observable.observe('foo', dfd.callback((value:string, oldValue:string) => {
 				assert.strictEqual(value, 'baz');
 				assert.strictEqual(oldValue, 'bar');
-			}));
+			}), false);
 
 			observable.foo = 'baz';
 		},
@@ -73,7 +73,7 @@ registerSuite({
 
 			observable.observe('foo', dfd.rejectOnError(() => {
 				assert(false, 'Should not have been called');
-			})).remove();
+			}), false).remove();
 
 			setTimeout(dfd.callback(() => {}), 500);
 			observable.foo = 'thonk';
@@ -89,7 +89,7 @@ registerSuite({
 			observable.foo = 'thonk';
 			observable.observe('foo', dfd.rejectOnError(() => {
 				assert(false, 'Should not have been called');
-			}));
+			}), false);
 
 			setTimeout(dfd.callback(() => {}), 500);
 		},
@@ -103,11 +103,42 @@ registerSuite({
 
 			var handle = observable.observe('foo', dfd.rejectOnError(() => {
 				assert(false, 'Should not have been called');
-			}));
+			}), false);
 			observable.foo = 'thonk';
 			handle.remove();
 
 			setTimeout(dfd.callback(() => {}), 500);
+		},
+
+		'value revert does not notify': function () {
+			var dfd = this.async();
+			var observable = new TestObservable({
+				foo: 'bar',
+				baz: 'blah'
+			});
+
+			observable.observe('foo', dfd.rejectOnError(() => {
+				assert(false, 'Should not have been called');
+			}), false);
+			observable.foo = 'thonk';
+			observable.foo = 'bar';
+
+			setTimeout(dfd.callback(() => {}), 500);
+		},
+		'value revert then change notifies': function () {
+			var dfd = this.async();
+			var observable = new TestObservable({
+				foo: 'bar',
+				baz: 'blah'
+			});
+
+			observable.observe('foo', dfd.callback((newValue:string, oldValue:string) => {
+				assert.strictEqual(newValue, 'baz');
+				assert.strictEqual(oldValue, 'bar');
+			}), false);
+			observable.foo = 'thonk';
+			observable.foo = 'bar';
+			observable.foo = 'baz';
 		}
 	}
 });

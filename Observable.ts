@@ -26,17 +26,17 @@ class Observable implements core.IObservable {
 			_callbacks: {
 				value: {}
 			},
+			_dispatch: {
+				configurable: true,
+				value: this._dispatch.bind(this),
+				writable: true
+			},
 			_notifications: {
 				value: Object.create(null),
 				writable: true
 			},
 			_timer: {
 				value: null,
-				writable: true
-			},
-			_dispatch: {
-				configurable: true,
-				value: this._dispatch.bind(this),
 				writable: true
 			}
 		});
@@ -48,22 +48,33 @@ class Observable implements core.IObservable {
 			this._timer = null;
 		}
 
+		// Grab the current notifications and immediately create a new hash
+		// to start storing any notifications that might be generated this turn
 		var notifications = this._notifications;
 		this._notifications = Object.create(null);
+
 		for (var property in notifications) {
 			var notification = notifications[property];
 
-			if (!notification) {
+			if (this._isEqual(notification.oldValue, notification.newValue)) {
+				// If a different-value notification is in-flight and something changes
+				// the value back to what it started as, skip the notification
 				continue;
 			}
 
 			var callback:ICallbackObject;
 			for (var i = 0; (callback = notification.callbacks[i]); i++) {
+				// If a callback was removed after the notification was scheduled to
+				// start, don't call it
 				if (!callback.removed) {
 					callback.callback.call(this, notification.newValue, notification.oldValue);
 				}
 			}
 		}
+	}
+
+	_isEqual(a:any, b:any):boolean {
+		return lang.isEqual(a, b);
 	}
 
 	private _notify(property:string, newValue:any, oldValue:any) {
@@ -75,14 +86,11 @@ class Observable implements core.IObservable {
 		var notification = this._notifications[property];
 
 		if (notification) {
-			if (lang.isEqual(notification.oldValue, newValue)) {
-				notification = this._notifications[property] = null;
-			}
-			else {
-				notification.newValue = newValue;
-			}
+			notification.newValue = newValue;
 		}
-		else if (!lang.isEqual(newValue, oldValue)) {
+		else {
+			// Create a notification and give it a copy of the callbacks
+			// that are currently registered
 			this._notifications[property] = {
 				newValue: newValue,
 				oldValue: oldValue,
@@ -95,58 +103,57 @@ class Observable implements core.IObservable {
 		}
 	}
 
-	observe(property:string, callback:core.IObservableCallback):core.IHandle {
-		var callbacks = this._callbacks[property],
-			callbackObject:ICallbackObject = {
-				callback: callback
-			};
-		if (!callbacks) {
+	// TODO: informImmediately is a horrible name
+	// TODO: Should informImmediately default to true?
+	observe(property:string, callback:core.IObservableCallback, informImmediately:boolean = true):core.IHandle {
+		var callbackObject:ICallbackObject = {
+			callback: callback
+		};
+
+		if (!this._callbacks[property]) {
 			var oldDescriptor = lang.getPropertyDescriptor(this, property),
+				currentValue:any = this[property],
 				descriptor:PropertyDescriptor = {
 					configurable: true,
 					enumerable: true
 				};
 
-			if (oldDescriptor.get || oldDescriptor.set) {
-				// accessor
-				if (oldDescriptor.get) {
-					descriptor.get = oldDescriptor.get;
-				}
+			if (oldDescriptor && !('value' in oldDescriptor)) {
+				descriptor.get = oldDescriptor.get;
+
 				if (oldDescriptor.set) {
 					descriptor.set = (value:any) => {
-						var oldValue = this[property];
+						oldDescriptor.set.apply(this, arguments);
+						var newValue = descriptor.get.call(this);
 
-						if (lang.isEqual(value, oldValue)) {
-							return;
-						}
-
-						this._notify(property, value, oldValue);
-						oldDescriptor.set.call(this, value);
+						this._notify(property, newValue, currentValue);
+						currentValue = newValue;
 					};
 				}
 			}
 			else {
 				// property
-				var value = this[property];
 				descriptor.get = () => {
-					return value;
+					return currentValue;
 				};
 				if (oldDescriptor.writable) {
 					descriptor.set = (newValue:any) => {
-						if (lang.isEqual(value, newValue)) {
-							return;
-						}
-						this._notify(property, newValue, value);
-						value = newValue;
+						this._notify(property, newValue, currentValue);
+						currentValue = newValue;
 					};
 				}
 			}
 			Object.defineProperty(this, property, descriptor);
 
-			callbacks = this._callbacks[property] = [callbackObject];
+			this._callbacks[property] = [callbackObject];
 		}
 		else {
-			callbacks.push(callbackObject);
+			this._callbacks[property].push(callbackObject);
+		}
+
+		if (informImmediately) {
+			// TODO: Should informing be done same-turn or next-turn?
+			callback.call(this, this[property]);
 		}
 
 		var self = this;
