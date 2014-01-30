@@ -3,6 +3,7 @@ define([
 	'./DateObject',
 	'./lang',
 	'./Observable',
+	'./ObservableProperty',
 	'./Promise',
 	'./nextTick',
 	'./string'

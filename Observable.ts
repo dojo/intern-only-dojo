@@ -23,8 +23,10 @@ class Observable implements core.IObservable {
 	private _notifications: { [property:string]:INotification };
 	private _timer:core.IHandle;
 
-	constructor(props:any) {
-		lang.mixin(this, props);
+	constructor(props?:any) {
+		if (props) {
+			lang.mixin(this, props);
+		}
 
 		Object.defineProperties(this, {
 			_callbacks: {
@@ -102,9 +104,7 @@ class Observable implements core.IObservable {
 			};
 		}
 
-		if (!this._timer) {
-			this._timer = Scheduler.schedule(this._dispatch);
-		}
+		this._schedule();
 	}
 
 	observe<T>(property:string, callback:core.IObserver<T>):core.IHandle {
@@ -163,6 +163,12 @@ class Observable implements core.IObservable {
 				array.remove(self._callbacks[property], callbackObject);
 			}
 		};
+	}
+
+	_schedule():void {
+		if (!this._timer) {
+			this._timer = Scheduler.schedule(this._dispatch);
+		}
 	}
 }
 
