@@ -5,7 +5,7 @@ var path = require('path'),
 	globule = require('globule');
 
 module.exports = function (grunt) {
-	grunt.loadNpmTasks('grunt-typescript');
+	grunt.loadNpmTasks('grunt-ts');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('intern');
@@ -17,11 +17,11 @@ module.exports = function (grunt) {
 		defaultLib: [ '<%= all %>', '!tests/**/*.ts' ],
 		defaultTests: [ '<%= onlyTests %>' ],
 
-		typescript: {
+		ts: {
 			options: {
 				target: 'es5',
 				module: 'amd',
-				sourcemap: true,
+				sourceMap: true,
 				noImplicitAny: true
 			},
 			lib: {
@@ -68,14 +68,14 @@ module.exports = function (grunt) {
 		watch: {
 			all: {
 				files: [ '<%= all %>', 'interfaces.d.ts', 'tests/**/*.d.ts' ],
-				tasks: [ 'typescript:lib', 'typescript:tests' ],
+				tasks: [ 'ts:lib', 'ts:tests' ],
 				options: {
 					spawn: false
 				}
 			}
 		},
 		clean: {
-			typescript: {
+			ts: {
 				src: [
 					'**/*.js', '**/*.d.ts', '**/*.js.map', 'sauce_connect.log', 'tscommand.tmp.txt',
 					'!node_modules/**/*', '!Gruntfile.js', '!loader.js',
@@ -99,7 +99,7 @@ module.exports = function (grunt) {
 		}
 	});
 
-	grunt.registerTask('build', [ 'typescript:lib' ]);
+	grunt.registerTask('build', [ 'ts:lib' ]);
 
 	grunt.registerTask('test', function (target) {
 		if (!target || target === 'coverage' || target === 'compile') {
@@ -125,7 +125,7 @@ module.exports = function (grunt) {
 		}
 
 		if (this.flags.compile) {
-			grunt.task.run('typescript');
+			grunt.task.run('ts');
 		}
 		grunt.task.run('intern:' + target);
 	});
@@ -218,8 +218,8 @@ module.exports = function (grunt) {
 				libs = grunt.file.match(grunt.config.get('defaultLib'), files),
 				tests = grunt.file.match(grunt.config.get('defaultTests'), files);
 
-			grunt.config.set('typescript.lib.src', libs);
-			grunt.config.set('typescript.tests.src', tests);
+			grunt.config.set('ts.lib.src', libs);
+			grunt.config.set('ts.tests.src', tests);
 
 			recompile = {};
 		}, 200);
@@ -237,6 +237,6 @@ module.exports = function (grunt) {
 			onChange();
 		});
 
-		grunt.task.run([ 'force:on', 'typescript', 'force:restore', 'watch' ]);
+		grunt.task.run([ 'force:on', 'ts', 'force:restore', 'watch' ]);
 	});
 };
