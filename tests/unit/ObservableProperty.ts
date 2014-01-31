@@ -32,10 +32,10 @@ registerSuite({
 			}),
 			property = new ObservableProperty<string>(observable, 'foo');
 
-		property.observe('value', (newValue:number, oldValue:number) => {
+		property.observe('value', dfd.callback((newValue:number, oldValue:number) => {
 			assert.strictEqual(newValue, 'baz');
 			assert.strictEqual(oldValue, 'bar');
-		});
+		}));
 
 		property.value = 'baz';
 	}
