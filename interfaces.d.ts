@@ -6,6 +6,10 @@ export interface Define {
 
 export declare var define: Define;
 
+export interface IArrayObserver<T> {
+	(index:number, inserted:IObservableArray<T>, removedItems:IObservableArray<T>):void;
+}
+
 export interface IDateObject {
 	dayOfMonth:number;
 	dayOfWeek:number;
@@ -63,7 +67,13 @@ export interface ILoaderPluginFunction extends ILoaderPlugin {
 }
 
 export interface IObservable {
-	observe<T>(property:string, callback:IObserver<T>):IHandle;
+	observe<T>(property:string, observer:IObserver<T>):IHandle;
+}
+
+export interface IObservableArray<T> {
+	[index:number]:T;
+	observe(observer:IArrayObserver<T>):IHandle;
+	set(index:number, value:T):void;
 }
 
 export interface IObserver<T> {
