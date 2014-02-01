@@ -12,5 +12,5 @@ env:
     - TEST_SUITE: remote
 before_script:
   - "npm install -g grunt-cli"
-  - "grunt typescript"
+  - "grunt ts"
 script: "grunt test:$TEST_SUITE"
