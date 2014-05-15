@@ -1,0 +1,4 @@
+*.ts
+.travis.yml
+tests/
+tslint.json
