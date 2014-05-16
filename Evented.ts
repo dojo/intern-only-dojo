@@ -2,11 +2,9 @@ import core = require('./interfaces');
 import on = require('./on');
 import aspect = require('./aspect');
 
-var slice = Array.prototype.slice;
-
-class Evented implements core.IEvented {
-	on(type:string, listener:Function):core.IHandle {
-		return on.parse(this, type, listener, this, (target:Evented, type:string) => {
+class Evented {
+	on(type:string, listener:(...args:any[]) => void):core.IHandle {
+		return on.parse(this, type, listener, this, (target:Evented, type:string):core.IHandle => {
 			var name = '__on' + type;
 			if (!this[name]) {
 				Object.defineProperty(this, name, {

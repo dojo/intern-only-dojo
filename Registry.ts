@@ -1,50 +1,58 @@
-import array = require('./array');
+import lang = require('./lang');
 import core = require('./interfaces');
 
-interface IPair<T extends core.IRegistryMatcher, U> {
-	match:T;
-	value:U;
+module Registry {
+	export interface ITest {
+		(...args:any[]):boolean;
+	}
 }
 
-class Registry<T extends core.IRegistryMatcher, U> {
-	private _pairs:IPair<T, U>[] = [];
-	private _defaultValue:U;
+interface IEntry<ValueT> {
+	test:Registry.ITest;
+	value:ValueT;
+}
 
-	constructor(defaultValue?:U) {
-		if (arguments.length > 0) {
-			this._defaultValue = defaultValue;
-		}
+class Registry<ValueT> {
+	private _entries:IEntry<ValueT>[] = [];
+	private _defaultValue:ValueT;
+
+	constructor(defaultValue?:ValueT) {
+		this._defaultValue = defaultValue;
 	}
 
-	register(matcher:T, value:U, first?:boolean):core.IHandle {
-		var pair:IPair<T, U> = {
-			match: matcher,
-			value: value
-		};
-		this._pairs[first ? 'unshift' : 'push'](pair);
+	match(...args:any[]):ValueT {
+		var entries:IEntry<ValueT>[] = this._entries.slice(0);
+		var entry:IEntry<ValueT>;
 
-		return {
-			remove: function () {
-				this.remove = () => {};
-				array.remove(this._pairs, pair);
-				matcher = value = pair = null;
-			}
-		};
-	}
-
-	match(...args:any[]):U {
-		var pairs = this._pairs.slice(0),
-			pair:IPair<T, U>;
-
-		for (var i = 0; (pair = this._pairs[i]); i++) {
-			if (pair.match.apply(null, args)) {
-				return pair.value;
+		for (var i = 0; (entry = entries[i]); ++i) {
+			if (entry.test.apply(null, args)) {
+				return entry.value;
 			}
 		}
-		if (this.hasOwnProperty('_defaultValue')) {
+
+		if (this._defaultValue !== undefined) {
 			return this._defaultValue;
 		}
+
 		throw new Error('No match found');
+	}
+
+	register(test:Registry.ITest, value:ValueT, first?:boolean):core.IHandle {
+		var entries = this._entries;
+		var entry:IEntry<ValueT> = {
+			test: test,
+			value: value
+		};
+
+		entries[first ? 'unshift' : 'push'](entry);
+
+		return {
+			remove: function ():void {
+				this.remove = function ():void {};
+				lang.pullFromArray(entries, entry);
+				test = value = entries = entry = null;
+			}
+		};
 	}
 }
 

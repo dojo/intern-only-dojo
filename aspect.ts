@@ -1,7 +1,5 @@
 import core = require('./interfaces');
 
-var nextId = 0;
-
 interface IAdvised {
 	id?: number;
 	advice: Function;
@@ -18,13 +16,15 @@ interface IDispatcher {
 	after?: IAdvised;
 }
 
+var nextId = 0;
+
 function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArguments?:boolean):core.IHandle {
-	var previous = dispatcher[type],
-		advised = <IAdvised>{
-			id: nextId++,
-			advice: advice,
-			receiveArguments: receiveArguments
-		};
+	var previous = dispatcher[type];
+	var advised = <IAdvised> {
+		id: nextId++,
+		advice: advice,
+		receiveArguments: receiveArguments
+	};
 
 	if (previous) {
 		if (type === 'after') {
@@ -48,43 +48,44 @@ function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArg
 	advice = previous = null;
 
 	return {
-		remove: () => {
-			if (advised) {
-				var previous = advised.previous,
-					next = advised.next;
+		remove: function ():void {
+			this.remove = noop;
 
-				if (!previous && !next) {
-					dispatcher[type] = null;
+			var previous = advised.previous;
+			var next = advised.next;
+
+			if (!previous && !next) {
+				dispatcher[type] = null;
+			}
+			else {
+				if (previous) {
+					previous.next = next;
 				}
 				else {
-					if (previous) {
-						previous.next = next;
-					}
-					else {
-						dispatcher[type] = next;
-					}
-					if (next) {
-						next.previous = previous;
-					}
+					dispatcher[type] = next;
 				}
 
-				dispatcher = advised = null;
+				if (next) {
+					next.previous = previous;
+				}
 			}
+
+			dispatcher = advised = null;
 		}
 	};
 }
 
 function getDispatcher(target:any, methodName:string):IDispatcher {
-	var existing = target[methodName],
-		dispatcher:IDispatcher;
+	var existing = target[methodName];
+	var dispatcher:IDispatcher;
 
 	if (!existing || existing.target !== target) {
 		// no dispatcher
-		target[methodName] = dispatcher = <IDispatcher>(function () {
-			var executionId = nextId,
-				args = arguments,
-				results:any,
-				before = dispatcher.before;
+		target[methodName] = dispatcher = <IDispatcher> function ():any {
+			var executionId = nextId;
+			var args = arguments;
+			var results:any;
+			var before = dispatcher.before;
 
 			while (before) {
 				args = before.advice.apply(this, args) || args;
@@ -106,16 +107,18 @@ function getDispatcher(target:any, methodName:string):IDispatcher {
 				}
 				after = after.next;
 			}
+
 			return results;
-		});
+		};
 
 		if (existing) {
 			dispatcher.around = {
-				advice: (target:any, args:any[]) => {
+				advice: function (target:any, args:any[]):any {
 					return existing.apply(target, args);
 				}
 			};
 		}
+
 		dispatcher.target = target;
 	}
 	else {
@@ -127,23 +130,21 @@ function getDispatcher(target:any, methodName:string):IDispatcher {
 	return dispatcher;
 }
 
-export function before(target:any, methodName:string, advice:Function):core.IHandle {
-	return advise(getDispatcher(target, methodName), 'before', advice);
+function noop():void {}
+
+export function after(target:any, methodName:string, advice:Function):core.IHandle {
+	return advise(getDispatcher(target, methodName), 'after', advice);
 }
 
-export interface IAroundFactory {
-	(previous:Function):Function;
-}
-
-export function around(target:any, methodName:string, advice:IAroundFactory):core.IHandle {
-	var dispatcher = getDispatcher(target, methodName),
-		previous = dispatcher.around,
-		advised = advice(function () {
-			return previous.advice(this, arguments);
-		});
+export function around(target:any, methodName:string, advice:(previous:Function) => Function):core.IHandle {
+	var dispatcher = getDispatcher(target, methodName);
+	var previous = dispatcher.around;
+	var advised = advice(function ():any {
+		return previous.advice(this, arguments);
+	});
 
 	dispatcher.around = {
-		advice: (target:any, args:any[]) => {
+		advice: function (target:any, args:any[]):any {
 			return advised ?
 				advised.apply(target, args) :
 				previous.advice(target, args);
@@ -153,17 +154,17 @@ export function around(target:any, methodName:string, advice:IAroundFactory):cor
 	advice = null;
 
 	return {
-		remove: () => {
-			if (advised) {
-				advised = dispatcher = null;
-			}
+		remove: function ():void {
+			this.remove = noop;
+			advised = dispatcher = null;
 		}
 	};
 }
 
-export function after(target:any, methodName:string, advice:Function):core.IHandle {
-	return advise(getDispatcher(target, methodName), 'after', advice);
+export function before(target:any, methodName:string, advice:Function):core.IHandle {
+	return advise(getDispatcher(target, methodName), 'before', advice);
 }
+
 export function on(target:any, methodName:string, advice:Function):core.IHandle {
 	return advise(getDispatcher(target, methodName), 'after', advice, true);
 }

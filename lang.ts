@@ -151,3 +151,13 @@ else {
 		return null;
 	};
 }
+
+export function pullFromArray<T>(haystack:T[], needle:T):T[] {
+	var removed = [];
+	var i = 0;
+	while ((i = haystack.indexOf(needle, i)) > -1) {
+		removed.push(haystack.splice(i, 1)[0]);
+	}
+
+	return removed;
+}

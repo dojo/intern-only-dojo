@@ -1,53 +1,53 @@
+import has = require('./has');
+
 declare var process:any;
-declare var require:(moduleId:string) => any;
+declare var require:<ModuleType>(moduleId:string) => ModuleType;
 declare var module:{ exports:any; };
 
-interface Object {
-	[key:string]:any;
-}
-
-interface IConfig extends Object {
+export interface IConfig extends Object {
 	baseUrl?:string;
 	map?:IModuleMap;
 	packages?:IPackage[];
 	paths?:IPathMap;
 }
 
-interface IDefine {
+export interface IDefine {
 	(moduleId:string, dependencies:string[], factory:IFactory):void;
 	(dependencies:string[], factory:IFactory):void;
+	(factory:IFactory):void;
 	(value:any):void;
 }
 
-interface IFactory {
+export interface IFactory {
 	(...modules:any[]):any;
 }
 
-interface IHas {
-	(name:string):any;
-	add(name:string, value:any, now?:boolean, force?:boolean):void;
+export interface ILoaderPlugin {
+	dynamic?:boolean;
+	load?:(resourceId:string, require:IRequire, load:(value?:any) => void, config?:Object) => void;
+	normalize?:(moduleId:string, normalize:(moduleId:string) => string) => string;
 }
 
-interface IMapItem extends Array<any> {
+export interface IMapItem extends Array<any> {
 	/* prefix */      0:string;
 	/* replacement */ 1:any;
 	/* regExp */      2:RegExp;
 	/* length */      3:number;
 }
 
-interface IMapReplacement extends IMapItem {
+export interface IMapReplacement extends IMapItem {
 	/* replacement */ 1:string;
 }
 
-interface IMapRoot extends Array<IMapSource> {
+export interface IMapRoot extends Array<IMapSource> {
 	star?:IMapSource;
 }
 
-interface IMapSource extends IMapItem {
+export interface IMapSource extends IMapItem {
 	/* replacement */ 1:IMapReplacement[];
 }
 
-interface IModule {
+export interface IModule extends ILoaderPlugin {
 	cjs:{
 		exports:any;
 		id:string;
@@ -68,55 +68,52 @@ interface IModule {
 	url:string;
 
 	// plugin interface
-	dynamic?:boolean;
-	load?:(resourceId:string, require:IRequire, load:(value:any) => void, config?:Object) => void;
 	loadQ?:IModule[];
-	normalize?:(moduleId:string, toAbsMid:(moduleId:string) => string) => string;
 	plugin?:IModule;
 	prid:string;
 }
 
-interface IModuleMap extends IModuleMapItem {
+export interface IModuleMap extends IModuleMapItem {
 	[sourceMid:string]:IModuleMapReplacement;
 }
 
-interface IModuleMapItem {}
+export interface IModuleMapItem {}
 
-interface IModuleMapReplacement extends IModuleMapItem {
+export interface IModuleMapReplacement extends IModuleMapItem {
 	[findMid:string]:/* replaceMid */string;
 }
 
-interface IPackage {
+export interface IPackage {
 	location?:string;
 	main?:string;
 	name?:string;
 }
 
-interface IPackageMap {
+export interface IPackageMap {
 	[packageId:string]:IPackage;
 }
 
-interface IPathMap extends IMapReplacement {}
+export interface IPathMap extends IMapReplacement {}
 
-interface IRequire {
+export interface IRequire {
 	(config:IConfig, dependencies?:string[], callback?:IRequireCallback):void;
 	(dependencies:string[], callback:IRequireCallback):void;
 	<ModuleType>(moduleId:string):ModuleType;
 
-	toAbsMid(mid:string):string;
-	toUrl(name:string):string;
+	toAbsMid(moduleId:string):string;
+	toUrl(path:string):string;
 }
 
-interface IRequireCallback {
+export interface IRequireCallback {
 	(...modules:any[]):void;
 }
 
-interface IRootRequire extends IRequire {
+export interface IRootRequire extends IRequire {
 	config(config:IConfig):void;
-	has:IHas;
+	has:has;
 	inspect?:(name:string) => any;
 	nodeRequire?:typeof require;
-	signal:(type:string, event:any) => void;
+	signal:(type:string, data:any[]) => void;
 	undef:(moduleId:string) => void;
 }
 
@@ -135,13 +132,13 @@ interface IRootRequire extends IRequire {
 		contextRequire(dependencies, callback);
 	};
 
-	var has:IHas = req.has = (function ():IHas {
+	var has:has = req.has = (function ():has {
 		var hasCache:{ [name:string]:any; } = Object.create(null);
 		var global:Window = this;
 		var document:HTMLDocument = global.document;
 		var element:HTMLDivElement = document && document.createElement('div');
 
-		var has:IHas = <IHas> function(name:string):any {
+		var has:has = <has> function(name:string):any {
 			return typeof hasCache[name] === 'function' ? (hasCache[name] = hasCache[name](global, document, element)) : hasCache[name];
 		};
 
@@ -883,10 +880,10 @@ interface IRootRequire extends IRequire {
 	has.add('loader-debug-internals', true);
 	if (has('loader-debug-internals')) {
 		req.inspect = function (name:string):any {
-			/* tshint:disable */
+			/* tslint:disable:no-eval */
 			// TODO: Should this use console.log so people do not get any bright ideas about using this in apps?
 			return eval(name);
-			/* tshint:enable */
+			/* tslint:enable:no-eval */
 		};
 	}
 

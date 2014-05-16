@@ -1,71 +1,103 @@
 import core = require('./interfaces');
-import has = require('./has');
+import Evented = require('./Evented');
 
-var slice = Array.prototype.slice;
+module on {
+	export interface IExtensionEvent {
+		(target:any, listener:EventListener):core.IHandle;
+	}
+
+	export interface IOnAddListener {
+		(target:any, type:string, listener:Function, capture?:boolean):core.IHandle;
+	}
+}
+
+/* tslint:disable:class-name */
+interface on {
+/* tslint:enable:class-name */
+	(target:HTMLElement, type:string, listener:EventListener, capture?:boolean):core.IHandle;
+	(target:HTMLElement, type:on.IExtensionEvent, listener:EventListener, capture?:boolean):core.IHandle;
+	(target:Evented, type:string, listener:EventListener, capture?:boolean):core.IHandle;
+	(target:Evented, type:on.IExtensionEvent, listener:EventListener, capture?:boolean):core.IHandle;
+	parse(target:HTMLElement, type:string, listener:EventListener, context:any, addListener:on.IOnAddListener, capture?:boolean):core.IHandle;
+	parse(target:HTMLElement, type:on.IExtensionEvent, listener:EventListener, context:any, addListener:on.IOnAddListener, capture?:boolean):core.IHandle;
+	parse(target:Evented, type:string, listener:EventListener, context:any, addListener:on.IOnAddListener, capture?:boolean):core.IHandle;
+	parse(target:Evented, type:on.IExtensionEvent, listener:EventListener, context:any, addListener:on.IOnAddListener, capture?:boolean):core.IHandle;
+	emit(target:HTMLElement, type:string, event?:Object):boolean;
+	emit(target:Evented, type:string, event?:Object):boolean;
+}
+
+function noop():void {}
 
 function addListener(target:any, type:string, listener:Function, capture?:boolean):core.IHandle {
 	if (target.addEventListener) {
 		target.addEventListener(type, listener, capture);
 
-		var handle = {
-			remove: () => {
-				handle.remove = () => {};
+		return {
+			remove: function ():void {
+				this.remove = noop;
 				target.removeEventListener(type, listener, capture);
+				target = listener = null;
 			}
 		};
-		return handle;
 	}
+
 	throw new Error('Target must be an event emitter');
 }
 
-var on:core.IOn = <any>function (target:any, type:any, listener:Function, capture?:boolean):core.IHandle {
+var on:on = <on> function (target:any, type:any, listener:EventListener, capture?:boolean):core.IHandle {
 	if (typeof target.on === 'function' && typeof type !== 'function' && !target.nodeType) {
 		return target.on(type, listener, capture);
 	}
 
 	return on.parse(target, type, listener, this, addListener, capture);
-}
+};
 
-function parse(target:any, type:any, listener:Function, context:any, addListener:core.IOnAddListener, capture?:boolean):core.IHandle {
+on.parse = function (target:any, type:any, listener:EventListener, context:any, addListener:on.IOnAddListener, capture?:boolean):core.IHandle {
+	// `type` is ExtensionEvent
 	if (type.call) {
 		return type.call(context, target, listener, capture);
 	}
+
 	if (type.indexOf(',') > -1) {
-		var events = type.split(/\s*,\s*/),
-			handles:core.IHandle[] = events.map((eventName:string) => {
-				return addListener(target, eventName, listener, capture);
-			});
+		var events = type.split(/\s*,\s*/);
+		var handles:core.IHandle[] = events.map(function (type:string):core.IHandle {
+			return addListener(target, type, listener, capture);
+		});
+
 		return {
-			remove: function () {
-				this.remove = () => {};
-				handles.forEach((handle:core.IHandle) => {
+			remove: function ():void {
+				this.remove = noop;
+				var handle;
+				while ((handle = handles.pop())) {
 					handle.remove();
-				});
+				}
 			}
 		};
 	}
-	return addListener(target, type, listener, capture);
-}
-on.parse = parse;
 
-function emit(target:any, type:string, event:any):boolean {
+	return addListener(target, type, listener, capture);
+};
+
+on.emit = function (target:any, type:string, event?:any):boolean {
+	// `target` is not a DOM node
 	if (typeof target.emit === 'function' && !target.nodeType) {
 		return target.emit(type, event);
 	}
 
-	if (target.dispatchEvent && document.createEvent) {
+	if (target.dispatchEvent && target.ownerDocument && target.ownerDocument.createEvent) {
 		var nativeEvent = target.ownerDocument.createEvent('HTMLEvents');
-		nativeEvent.initEvent(type, !!event.bubbles, !!event.cancelable);
+		nativeEvent.initEvent(type, Boolean(event.bubbles), Boolean(event.cancelable));
 
-		for (var i in event) {
-			if (!(i in nativeEvent)) {
-				nativeEvent[i] = event[i];
+		for (var key in event) {
+			if (!(key in nativeEvent)) {
+				nativeEvent[key] = event[key];
 			}
 		}
-		return target.dispatchEvent(nativeEvent) && nativeEvent;
+
+		return target.dispatchEvent(nativeEvent);
 	}
+
 	throw new Error('Target must be an event emitter');
-}
-on.emit = emit;
+};
 
 export = on;
