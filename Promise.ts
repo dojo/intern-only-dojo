@@ -1,302 +1,190 @@
-import core = require('./interfaces');
-import has = require('./has');
 import nextTick = require('./nextTick');
 
-var global = (function () { return this; })();
-has.add('native-promise', (global) => {
-	return typeof global.Promise !== 'undefined';
-});
-
-// TODO: This works, but should it? Also, Chrome's Promise doesn't meet the
-// spec and accepts objects instead of rejecting
-/*if (has('native-promise')) {
-	return <{
-		new <T>(resolver:core.IPromiseResolver<T>):core.IPromise<T>;
-		all(iterable:any):core.IPromise<any[]>;
-		cast<T>(value:T):core.IPromise<T>;
-		cast<T>(value:core.IPromise<T>):core.IPromise<T>;
-		race(iterable:any):core.IPromise<any>;
-		reject<T>(reason:any):core.IPromise<T>;
-		resolve<T>(value:T):core.IPromise<T>;
-	}>global.Promise;
-}*/
-
-interface IDeferred<T> {
-	promise:core.IPromise<T>;
-	resolve:(value:T)=>void;
-	reject:(reason:any)=>void;
+interface ICallback<T> {
+	deferred:Deferred<any>;
+	callback:<U>(value?:T) => U;
 }
 
-function getDeferred<T>(constructor:(resolver:core.IPromiseResolver<T>)=>core.IPromise<T>):IDeferred<T> {
-	var deferred = <IDeferred<T>>{},
-		promise:core.IPromise<T> = Object.create(constructor.prototype);
-
-	var result:core.IPromise<T> = constructor.call(promise, (resolve:core.IPromiseFunction<T>, reject:core.IPromiseFunction<T>) => {
-		deferred.resolve = resolve.bind(undefined);
-		deferred.reject = reject.bind(undefined);
-	});
-
-	deferred.promise = typeof result === 'object' ? result : promise;
-
-	return deferred;
+interface IProgressCallback<T> {
+	(data?:T):void;
 }
 
-interface IResolutionHandler<T> {
-	(value:T):T;
-	(value:core.IPromise<T>):core.IPromise<T>;
-}
-function makeResolutionHandler<T>(promise:core.IPromise<any>, fulfillmentHandler:any, rejectionHandler:any):IResolutionHandler<T> {
-	function F(value:any):any {
-		if (value === promise) {
-			return rejectionHandler(new TypeError('Tried to resolve a promise with itself'));
-		}
-
-		if (value && typeof value === 'object' && typeof value.then === 'function') {
-			var deferred = getDeferred<T>((<any>promise).constructor);
-			try {
-				value.then(deferred.resolve, deferred.reject);
-			}
-			catch (e) {
-				deferred.reject(e);
-			}
-			return deferred.promise.then(fulfillmentHandler, rejectionHandler);
-		}
-		else {
-			return fulfillmentHandler(value);
-		}
-	}
-	return F;
+enum State {
+	PENDING,
+	RESOLVED,
+	REJECTED
 }
 
-interface IReaction {
-	deferred:IDeferred<any>;
-	handler:(value:any)=>any;
+class Deferred<T> {
+	promise:Promise<T>;
+
+	constructor() {
+		this.promise = new Promise<T>((resolve:(value?:any) => void, reject:(error?:any) => void, progress:(data?:any) => void):void => {
+			this.resolve = resolve;
+			this.reject = reject;
+			this.progress = progress;
+		});
+	}
+
+	progress:(data?:any) => void;
+	resolve:(value?:any) => void;
+	reject:(error?:any) => void;
 }
 
-function executePromiseReaction(reaction:IReaction, argument:any) {
-	var deferred = reaction.deferred,
-		handler = reaction.handler,
-		handlerResult:any;
+class Promise<T> {
+	/* tslint:disable:variable-name */
+	static Deferred = Deferred;
+	/* tslint:enable:variable-name */
 
-	try {
-		handlerResult = handler(argument);
-	}
-	catch (handlerResultError) {
-		return deferred.reject(handlerResultError);
-	}
+	constructor(executor:(resolve?:(value?:any) => void, reject?:(error?:any) => void, progress?:(data?:any) => void) => void) {
+		var state:State = State.PENDING;
+		var fulfilledValue:T;
+		var resolveCallbacks:ICallback<T>[] = [];
+		var rejectCallbacks:ICallback<Error>[] = [];
+		var progressCallbacks:IProgressCallback<any>[] = [];
 
-	if (handlerResult === deferred.promise) {
-		return deferred.reject(new TypeError('Tried to resolve a promise with itself!'));
-	}
+		// when callbacks are registered, they are not invoked until the next turn after the promise resolves;
+		// a new promise which is resolved once the return value of the callback is resolved is returned
+		this.then = function <U>(onResolved?:(value?:T) => any, onRejected?:(error?:Error) => any, onProgress?:(data?:any) => void):Promise<U> {
+			var deferred:Deferred<U> = new Deferred();
 
-	if (typeof handlerResult === 'object' && handlerResult && typeof handlerResult.then === 'function') {
-		try {
-			handlerResult.then(deferred.resolve, deferred.reject);
-		}
-		catch (thenError) {
-			deferred.reject(thenError);
-		}
-	}
-	else {
-		return deferred.resolve(handlerResult);
-	}
-}
-
-var identity = (value:any):any => {
-	return value;
-};
-var errorIdentity = (error:any):void => {
-	throw error;
-};
-
-class Promise<T> implements core.IPromise<T> {
-	constructor(resolver:core.IPromiseResolver<T>) {
-		var status = 'pending',
-			resolveReactions:IReaction[] = [],
-			rejectReactions:IReaction[] = [],
-			result:T;
-
-		function triggerReactions(reactions:IReaction[], newStatus:string, newResult:T) {
-			if (status !== 'pending') {
-				return;
-			}
-			resolveReactions = rejectReactions = undefined;
-			status = newStatus;
-			result = newResult;
-			reactions.forEach((reaction) => {
-				nextTick(executePromiseReaction.bind(null, reaction, newResult));
-			});
-			reactions = undefined;
-		}
-		var _resolve = triggerReactions.bind(undefined, resolveReactions, 'has-resolution'),
-			_reject = triggerReactions.bind(undefined, rejectReactions, 'has-rejection');
-
-		try {
-			resolver(_resolve, _reject);
-		}
-		catch (e) {
-			_reject(e);
-		}
-
-		var then: {
-			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):core.IPromise<U>;
-			<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>core.IPromise<U>):core.IPromise<U>;
-			<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>U):core.IPromise<U>;
-			<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>core.IPromise<U>):core.IPromise<U>;
-		} = function then<U>(onFulfilled?:any, onRejected?:any):Promise<U> {
-			var promise = this,
-				deferred = getDeferred<U>((<any>promise).constructor);
-
-			var rejectionHandler = errorIdentity;
-			if (typeof onRejected === 'function') {
-				rejectionHandler = onRejected;
-			}
-
-			var fulfillmentHandler = identity;
-			if (typeof onFulfilled === 'function') {
-				fulfillmentHandler = onFulfilled;
-			}
-
-			var resolutionReaction = {
+			if (state === State.PENDING) {
+				onResolved && resolveCallbacks.push({
 					deferred: deferred,
-					handler: makeResolutionHandler<U>(promise, fulfillmentHandler, rejectionHandler)
-				},
-				rejectionReaction = {
-					deferred: deferred,
-					handler: rejectionHandler
-				};
+					callback: onResolved
+				});
 
-			if (status === 'pending') {
-				resolveReactions.push(resolutionReaction);
-				rejectReactions.push(rejectionReaction);
-			} 
-			else if (status === 'has-resolution') {
-				nextTick(executePromiseReaction.bind(null, resolutionReaction, result));
+				onRejected && rejectCallbacks.push({
+					deferred: deferred,
+					callback: onRejected
+				});
+
+				onProgress && progressCallbacks.push(onProgress);
 			}
-			else if (status === 'has-rejection') {
-				nextTick(executePromiseReaction.bind(null, rejectionReaction, result));
+			else if (state === State.RESOLVED && onResolved) {
+				execute(deferred, onResolved, fulfilledValue);
+			}
+			else if (state === State.REJECTED && onRejected) {
+				execute(deferred, onRejected, fulfilledValue);
 			}
 
 			return deferred.promise;
 		};
-		this.then = then;
-	}
 
-	catch<U>(onRejected:(reason:any)=>U):Promise<U>;
-	catch<U>(onRejected:(reason:any)=>core.IPromise<U>):Promise<U>;
-	catch<U>(onRejected:(reason:any)=>any):Promise<U> {
-		return this.then<U>(undefined, onRejected);
-	}
-
-	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>U):Promise<U>;
-	then<U>(onFulfilled?:(value:T)=>U, onRejected?:(reason:any)=>core.IPromise<U>):Promise<U>;
-	then<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>U):Promise<U>;
-	then<U>(onFulfilled?:(value:T)=>core.IPromise<U>, onRejected?:(reason:any)=>core.IPromise<U>):Promise<U>;
-	then<U>(onFulfilled?:(value:T)=>any, onRejected?:(reason:any)=>any):Promise<U> {
-		throw new Error('"then" has not been implemented');
-	}
-
-	static all(iterable:any):Promise<any[]> {
-		var C = this,
-			deferred = getDeferred<any[]>(<any>C);
-
-		if (!Array.isArray(iterable)) {
-			// In ES5, the only ES6-compatible iterable object is an Array
-			deferred.reject(new TypeError('Non-iterable passed to "all"'));
-			return deferred.promise;
-		}
-
-		var values:any[] = [],
-			index = 0,
-			count = 0;
-
-		function thenNext(value:any) {
-			var nextPromise = Promise.cast(value);
-
-			nextPromise.then(((index:number, value:any) => {
+		function execute(deferred:Deferred<any>, callback:(value?:any) => any, fulfilledValue:T):void {
+			nextTick(function ():void {
 				try {
-					values[index] = value;
+					var returnValue:any = callback(fulfilledValue);
+					if (returnValue.then) {
+						returnValue.then(deferred.resolve, deferred.reject, deferred.progress);
+					}
+					else {
+						deferred.resolve(returnValue);
+					}
 				}
-				catch (e) {
-					deferred.reject(e);
-					return deferred.promise;
+				catch (error) {
+					deferred.reject(error);
 				}
-
-				count -= 1;
-
-				if (count === 0) {
-					deferred.resolve(values);
-				}
-			}).bind(null, index), deferred.reject);
-
-			index += 1;
-			count += 1;
+			});
 		}
 
-		if (!iterable.length) {
+		function fulfill(newState:State, callbacks:ICallback<any>[], value:T):void {
+			// TODO: Debugging assistance
+			if (state !== State.PENDING) {
+				return;
+			}
+
+			state = newState;
+			fulfilledValue = value;
+
+			for (var i = 0, callback:ICallback<any>; (callback = callbacks[i]); ++i) {
+				execute(callback.deferred, callback.callback, fulfilledValue);
+			}
+		}
+
+		try {
+			executor(
+				fulfill.bind(null, State.RESOLVED, resolveCallbacks),
+				fulfill.bind(null, State.REJECTED, rejectCallbacks),
+				function (data?:any):void {
+					for (var i = 0, callback:IProgressCallback<any>; (callback = progressCallbacks[i]); ++i) {
+						callback(data);
+					}
+				}
+			);
+		}
+		catch (error) {
+			fulfill(State.REJECTED, rejectCallbacks, error);
+		}
+	}
+
+	then: {
+		<U>(onResolved?:(value?:T) => U,          onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => void):Promise<U>;
+		<U>(onResolved?:(value?:T) => U,          onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => void):Promise<U>;
+		<U>(onResolved?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => void):Promise<U>;
+		<U>(onResolved?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => void):Promise<U>;
+	};
+
+	catch<U>(onRejected:(error?:Error) => U):Promise<U>;
+	catch<U>(onRejected:(error?:Error) => Promise<U>):Promise<U>;
+	catch<U>(onRejected:(error?:Error) => any):Promise<U> {
+		return this.then<U>(null, onRejected);
+	}
+
+	static all<U>(iterable:{ [key:string]:U; }):Promise<{ [key:string]:U; }>;
+	static all<U>(iterable:U[]):Promise<U[]>;
+	static all(iterable:any):Promise<any> {
+		function fulfill(key:string, value:any):void {
+			values[key] = value;
+			finish();
+		}
+
+		function finish():void {
+			if (populating || complete < total) {
+				return;
+			}
+
 			deferred.resolve(values);
 		}
-		else {
-			iterable.forEach(thenNext);
-		}
 
-		return deferred.promise;
-	}
+		var values:{ [key:string]:any; } = {};
+		var deferred:Deferred<typeof values> = new Deferred();
+		var complete:number = 0;
+		var total:number = 0;
+		var populating:boolean = true;
 
-	static cast<T>(value:T):Promise<T>;
-	static cast<T>(value:core.IPromise<T>):Promise<T>;
-	static cast<T>(value:any):Promise<T> {
-		var C = this;
-
-		if (value instanceof Promise) {
-			if (value.constructor === C) {
-				return value;
+		for (var key in iterable) {
+			++total;
+			var value:any = iterable[key];
+			if (value.then) {
+				value.then(fulfill.bind(null, key), fulfill.bind(null, key));
+			}
+			else {
+				fulfill(key, value);
 			}
 		}
 
-		var deferred = getDeferred<T>(<any>C);
-		deferred.resolve(value);
-		return deferred.promise;
-	}
-
-	static race(iterable:any):Promise<any> {
-		var C = this,
-			deferred = getDeferred<any>(<any>C);
-
-		function thenNext<T>(value:T) {
-			var nextPromise = Promise.cast<T>(value);
-			nextPromise.then(deferred.resolve, deferred.reject);
-		}
-
-		if (Array.isArray(iterable)) {
-			iterable.forEach(thenNext);
-		}
-		else {
-			for (var property in iterable) {
-				thenNext(iterable[property]);
-			}
-		}
+		populating = false;
+		finish();
 
 		return deferred.promise;
 	}
 
 	static reject<T>(reason:any):Promise<T> {
-		var C = this,
-			deferred = getDeferred<T>(<any>C);
-
+		var deferred = new Deferred();
 		deferred.reject(reason);
-
 		return deferred.promise;
 	}
 
-	static resolve<T>(value:core.IPromise<T>):Promise<T>;
+	static resolve<T>(value:Promise<T>):Promise<T>;
 	static resolve<T>(value:T):Promise<T>;
 	static resolve<T>(value:any):Promise<T> {
-		var C = this,
-			deferred = getDeferred<T>(<any>C);
+		if (value instanceof Promise) {
+			return value;
+		}
 
+		var deferred = new Deferred();
 		deferred.resolve(value);
-
 		return deferred.promise;
 	}
 }

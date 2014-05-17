@@ -47,21 +47,3 @@ export interface IObservableArray<T> {
 export interface IObserver<T> {
 	(newValue:T, oldValue:T):void;
 }
-
-export interface IPromise<T> {
-	catch<U>(onRejected:(reason:any) => U):IPromise<U>;
-	catch<U>(onRejected:(reason:any) => IPromise<U>):IPromise<U>;
-	then<U>(onFulfilled?:(value:T) => U, onRejected?:(reason:any) => U):IPromise<U>;
-	then<U>(onFulfilled?:(value:T) => U, onRejected?:(reason:any) => IPromise<U>):IPromise<U>;
-	then<U>(onFulfilled?:(value:T) => IPromise<U>, onRejected?:(reason:any) => U):IPromise<U>;
-	then<U>(onFulfilled?:(value:T) => IPromise<U>, onRejected?:(reason:any) => IPromise<U>):IPromise<U>;
-}
-
-export interface IPromiseFunction<T> {
-	(value:T):void;
-	(promise:IPromise<T>):void;
-}
-
-export interface IPromiseResolver<T> {
-	(resolve:IPromiseFunction<T>, reject:IPromiseFunction<any>):void;
-}
