@@ -1,5 +1,7 @@
 import has = require('./has/es6');
 
+has.add('es6-getpropertydescriptor', typeof (<any> Object).getPropertyDescriptor === 'function');
+
 var slice = Array.prototype.slice;
 
 function getDottedProperty(object:any, parts:string[], create:boolean):any {

@@ -38,6 +38,7 @@ if (!has) {
 
 	has.add('host-browser', typeof document !== 'undefined' && typeof location !== 'undefined');
 	has.add('host-node', typeof process === 'object' && process.versions && process.versions.node);
+	has.add('debug', true);
 }
 
 has.normalize = function (resourceId:string, normalize:(moduleId:string) => string):string {

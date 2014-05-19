@@ -152,6 +152,7 @@ export interface IRootRequire extends IRequire {
 
 	has.add('host-browser', typeof document !== 'undefined' && typeof location !== 'undefined');
 	has.add('host-node', typeof process === 'object' && process.versions && process.versions.node);
+	has.add('debug', true);
 
 	// IE9 will process multiple scripts at once before firing their respective onload events, so some extra work
 	// needs to be done to associate the content of the define call with the correct node. This is known to be fixed

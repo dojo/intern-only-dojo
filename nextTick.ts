@@ -4,29 +4,28 @@ import has = require('./has');
 
 declare var process:any;
 
-has.add('dom-mutationobserver', (global) => {
-	if (!has('host-browser')) {
-		return;
-	}
-	return !!(global.MutationObserver || global.WebKitMutationObserver);
+has.add('dom-mutationobserver', function (global:any):boolean {
+	return has('host-browser') && Boolean(global.MutationObserver || global.WebKitMutationObserver);
 });
 
-function noop() {}
+function noop():void {}
 
 var nextTick:(callback:() => void) => core.IHandle;
 
 if (has('host-node')) {
-	nextTick = (callback:() => void):core.IHandle => {
+	nextTick = function (callback:() => void):core.IHandle {
 		var removed = false;
-		process.nextTick(() => {
-			// There isn't a way to remove or "clear" a call to
-			// process.nextTick(), so just ignore.
-			if (removed) { return; }
+		process.nextTick(function ():void {
+			// There isn't an API to remove a pending call from `process.nextTick`
+			if (removed) {
+				return;
+			}
+
 			callback();
 		});
 
 		return {
-			remove: function () {
+			remove: function ():void {
 				this.remove = noop;
 				removed = true;
 			}
@@ -37,40 +36,32 @@ else {
 	var queue = new CallbackQueue<() => void>();
 
 	if (has('dom-mutationobserver')) {
-		nextTick = (function () {
-			var MutationObserver = this.MutationObserver || this.WebKitMutationObserver,
-				element = document.createElement('div'),
-				observer = new MutationObserver(() => {
-					queue.drain();
-				});
+		nextTick = (function ():typeof nextTick {
+			var MutationObserver = this.MutationObserver || this.WebKitMutationObserver;
+			var element = document.createElement('div');
+			var observer = new MutationObserver(function ():void {
+				queue.drain();
+			});
 
 			observer.observe(element, { attributes: true });
 
-			// Chrome Memory Leak: https://bugs.webkit.org/show_bug.cgi?id=93661
-			this.addEventListener('unload', () => {
-				observer.disconnect();
-				observer = element = null;
-			});
-
-			return (callback:() => void):core.IHandle => {
+			return function (callback:() => void):core.IHandle {
 				var handle = queue.add(callback);
-
 				element.setAttribute('drainQueue', '1');
-
 				return handle;
 			};
 		})();
 	}
 	else {
-		nextTick = (() => {
-			var timeout:number = null;
-			return (callback:() => void):core.IHandle => {
+		nextTick = (function ():typeof nextTick {
+			var timer:number;
+			return function (callback:() => void):core.IHandle {
 				var handle = queue.add(callback);
 
-				if (!timeout) {
-					timeout = setTimeout(() => {
-						clearTimeout(timeout);
-						timeout = null;
+				if (!timer) {
+					timer = setTimeout(function ():void {
+						clearTimeout(timer);
+						timer = null;
 						queue.drain();
 					}, 0);
 				}
