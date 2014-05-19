@@ -1,12 +1,12 @@
-import has = require('./has/es6');
+import has = require('./has');
 
 has.add('es6-getpropertydescriptor', typeof (<any> Object).getPropertyDescriptor === 'function');
 
 var slice = Array.prototype.slice;
 
 function getDottedProperty(object:any, parts:string[], create:boolean):any {
-	var key:string,
-		i = 0;
+	var key:string;
+	var i:number = 0;
 
 	while (object && (key = parts[i++])) {
 		if (typeof object !== 'object') {
@@ -19,9 +19,9 @@ function getDottedProperty(object:any, parts:string[], create:boolean):any {
 }
 
 export function setProperty(object:any, propertyName:string, value:any):void {
-	var parts = propertyName.split('.'),
-		part = parts.pop(),
-		property = getDottedProperty(object, parts, true);
+	var parts:string[] = propertyName.split('.');
+	var part:string = parts.pop();
+	var property:string = getDottedProperty(object, parts, true);
 
 	if (property && part) {
 		property[part] = value;
@@ -33,29 +33,30 @@ export function getProperty(object:any, propertyName:string, create:boolean = fa
 	return getDottedProperty(object, propertyName.split('.'), create);
 }
 
-function _mixin<T>(destination:any, source:any):T {
+function _mixin<T>(target:any, source:any):T {
 	for (var name in source) {
-		var sourceValue = source[name];
-		if (name in destination && destination[name] === sourceValue) {
-			// skip properties that destination already has
+		var sourceValue:any = source[name];
+		// TODO: If it is already the same, what are we saving by doing this?
+		if (name in target && target[name] === sourceValue) {
+			// skip properties that target already has
 			continue;
 		}
-		destination[name] = sourceValue;
+		target[name] = sourceValue;
 	}
 
-	return destination;
+	return target;
 }
 
-export function mixin<T extends Object>(destination:T, ...sources:any[]):T;
-export function mixin<T extends Object>(destination:any, ...sources:any[]):T;
-export function mixin(destination:any, ...sources:any[]):any {
-	if (!destination) {
-		destination = {};
+export function mixin<T extends Object>(target:T, ...sources:any[]):T;
+export function mixin<T extends Object>(target:any, ...sources:any[]):T;
+export function mixin(target:any, ...sources:any[]):any {
+	if (!target) {
+		target = {};
 	}
-	for (var i = 0; i < sources.length; i++) {
-		_mixin(destination, sources[i]);
+	for (var i:number = 0; i < sources.length; i++) {
+		_mixin(target, sources[i]);
 	}
-	return destination;
+	return target;
 }
 
 export function delegate<T extends Object>(object:T, properties?:any):T;
@@ -67,21 +68,21 @@ export function delegate(object:any, properties?:any):any {
 }
 
 var _bind = Function.prototype.bind;
-export function bind<T extends Function>(context:any, func:Function, ...extra:any[]):T;
+export function bind<T extends Function>(context:any, fn:Function, ...extra:any[]):T;
 export function bind<T extends Function>(context:any, method:string, ...extra:any[]):T;
-export function bind(context:any, func:any, ...extra:any[]):any {
-	if (typeof func === 'function') {
-		return _bind.apply(func, [context].concat(extra));
+export function bind(context:any, fn:any, ...extra:any[]):any {
+	if (typeof fn === 'function') {
+		return _bind.apply(fn, [ context ].concat(extra));
 	}
-	return function () {
-		return context[func].apply(context, extra.concat(slice.call(arguments, 0)));
+	return function ():any {
+		return context[fn].apply(context, extra.concat(slice.call(arguments, 0)));
 	};
 }
 
-export function partial<T extends Function>(func:Function, ...extra:any[]):T;
-export function partial(func:Function, ...extra:any[]):any {
-	return function () {
-		return func.apply(this, extra.concat(slice.call(arguments, 0)));
+export function partial<T extends Function>(fn:Function, ...extra:any[]):T;
+export function partial(fn:Function, ...extra:any[]):any {
+	return function ():any {
+		return fn.apply(this, extra.concat(slice.call(arguments, 0)));
 	};
 }
 
@@ -90,11 +91,11 @@ export function deepMixin<T extends Object>(target:any, source:any):T;
 export function deepMixin(target:any, source:any):any {
 	if (source && typeof source === 'object') {
 		if (Array.isArray(source)) {
-			(<any>target).length = source.length;
+			(<any> target).length = source.length;
 		}
 		for (var name in source) {
-			var targetValue = target[name],
-				sourceValue = source[name];
+			var targetValue:any = target[name];
+			var sourceValue:any = source[name];
 
 			if (targetValue !== sourceValue) {
 				if (sourceValue && typeof sourceValue === 'object') {
@@ -112,19 +113,20 @@ export function deepMixin(target:any, source:any):any {
 	return target;
 }
 
-export function deepDelegate<T extends Object>(origin:T, properties?:any):T;
-export function deepDelegate<T extends Object>(origin:any, properties?:any):T;
-export function deepDelegate(origin:any, properties:any = null):any {
-	var destination = delegate(origin);
+export function deepDelegate<T extends Object>(source:T, properties?:any):T;
+export function deepDelegate<T extends Object>(source:any, properties?:any):T;
+export function deepDelegate(source:any, properties?:any):any {
+	var target:any = delegate(source);
 
-	for (var name in origin) {
-		var value = origin[name];
+	for (var name in source) {
+		var value:any = source[name];
 
 		if (value && typeof value === 'object') {
-			destination[name] = deepDelegate<typeof value>(value);
+			target[name] = deepDelegate<typeof value>(value);
 		}
 	}
-	return deepMixin<any>(destination, properties);
+
+	return deepMixin<any>(target, properties);
 }
 
 export function isEqual(a:any, b:any):boolean {
@@ -155,8 +157,9 @@ else {
 }
 
 export function pullFromArray<T>(haystack:T[], needle:T):T[] {
-	var removed = [];
-	var i = 0;
+	var removed:T[] = [];
+	var i:number = 0;
+
 	while ((i = haystack.indexOf(needle, i)) > -1) {
 		removed.push(haystack.splice(i, 1)[0]);
 	}
