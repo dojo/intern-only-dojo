@@ -1,11 +1,11 @@
 import core = require('../interfaces');
 import on = require('../on');
 
-function once(type:string):core.IExtensionEvent {
-	return (target:any, listener:Function, capture?:boolean):core.IHandle => {
-		var handle = on(target, type, () => {
+function once(type:string):on.IExtensionEvent {
+	return function (target:any, listener:Function, capture?:boolean):core.IHandle {
+		var handle = on(target, type, function ():void {
 			handle.remove();
-			return listener.apply(this, arguments);
+			listener.apply(this, arguments);
 		});
 		return handle;
 	};

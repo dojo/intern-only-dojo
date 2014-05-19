@@ -86,7 +86,8 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		requestOptions.auth = encodeURIComponent(options.user || '') + ':' + encodeURIComponent(options.password || '');
 	}
 
-	var request:http.ClientRequest = (parsedUrl.protocol === 'https:' ? https : http).request(requestOptions);
+	// TODO: Cast to `any` prevents TS2226 error
+	var request:http.ClientRequest = (parsedUrl.protocol === 'https:' ? <any> https : http).request(requestOptions);
 	var response:request.IResponse = {
 		data: null,
 		getHeader: function (name:string):string {

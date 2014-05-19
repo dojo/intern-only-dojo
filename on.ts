@@ -67,7 +67,7 @@ on.parse = function (target:any, type:any, listener:EventListener, context:any, 
 		return {
 			remove: function ():void {
 				this.remove = noop;
-				var handle;
+				var handle:core.IHandle;
 				while ((handle = handles.pop())) {
 					handle.remove();
 				}

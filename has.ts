@@ -74,9 +74,9 @@ has.normalize = function (resourceId:string, normalize:(moduleId:string) => stri
 	return resourceId && normalize(resourceId);
 };
 
-has.load = function (id:string, parentRequire:loader.IRequire, load:(value?:any) => void):void {
-	if (id) {
-		parentRequire([ id ], load);
+has.load = function (resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+	if (resourceId) {
+		require([ resourceId ], load);
 	}
 	else {
 		load();

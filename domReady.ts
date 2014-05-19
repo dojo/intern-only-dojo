@@ -1,12 +1,8 @@
-import core = require('./interfaces');
 import has = require('./has');
+import loader = require('./loader');
 
 if (!has('host-browser')) {
-	return {
-		load: function (id:string, contextRequire:Function, loaded:Function) {
-			loaded(undefined);
-		}
-	};
+	throw new Error('dojo/domReady makes no sense to load in a non-browser environment');
 }
 
 var readyStates = Object.create(null);
@@ -16,7 +12,7 @@ var ready = readyStates[document.readyState],
 	readyQueue:Function[] = [],
 	processing = false;
 
-function processQueue() {
+function processQueue():void {
 	if (processing) {
 		return;
 	}
@@ -30,24 +26,31 @@ function processQueue() {
 }
 
 if (!ready) {
-	document.addEventListener('DOMContentLoaded', () => {
+	document.addEventListener('DOMContentLoaded', function ():void {
 		if (ready) {
 			return;
 		}
+
 		ready = true;
 		processQueue();
 	});
 }
 
-var domReady:core.ILoaderPluginFunction = <any>function domReady(callback:Function) {
+/* tslint:disable:class-name */
+interface domReady extends loader.ILoaderPlugin {
+/* tslint:enable:class-name */
+	(callback:() => void):void;
+}
+
+var domReady = <domReady> function (callback:(...args:any[]) => void):void {
 	readyQueue.push(callback);
 	if (ready) {
 		processQueue();
 	}
 };
-function load(id:string, contextRequire:core.Require, loaded:Function):void {
-	domReady(loaded);
-}
-domReady.load = load;
+
+domReady.load = function (resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+	domReady(load);
+};
 
 export = domReady;

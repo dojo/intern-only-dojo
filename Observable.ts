@@ -1,4 +1,3 @@
-import array = require('./array');
 import core = require('./interfaces');
 import lang = require('./lang');
 import Scheduler = require('./Scheduler');
@@ -160,7 +159,7 @@ class Observable implements core.IObservable {
 				// remove from in-flight notifications
 				callbackObject.removed = true;
 				// remove from future notifications
-				array.remove(self._callbacks[property], callbackObject);
+				lang.pullFromArray(self._callbacks[property], callbackObject);
 			}
 		};
 	}

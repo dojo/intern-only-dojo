@@ -1,40 +1,39 @@
-import core = require('./interfaces');
+/// <reference path="./nodejs" />
 import has = require('./has');
+import loader = require('./loader');
 
-declare var require:core.Require;
-
-var getText = function (url:string, load:Function) {
-	throw new Error('dojo/text not supported on this platform');
-};
+var getText:(url:string, callback:(value:string) => void) => void;
 
 if (has('host-browser')) {
-	getText = function (url, load) {
+	getText = function (url:string, callback:(value:string) => void):void {
 		var xhr = new XMLHttpRequest();
 
-		xhr.onreadystatechange = function () {
-			if (xhr.readyState !== 4) {
-				return;
-			}
-			var text = xhr.responseText;
-			xhr.onreadystatechange = null;
-			load(text);
+		xhr.onload = function ():void {
+			callback(xhr.responseText);
 		};
+
 		xhr.open('GET', url, true);
 		xhr.send(null);
 	};
 }
 else if (has('host-node')) {
-	var fs = require.nodeRequire('fs');
-	getText = function (url, load) {
-		fs.readFile(url, { encoding: 'utf-8' }, function (err:Error, data:string) {
-			if (err) {
-				throw err;
+	var fs = require('fs');
+	getText = function (url:string, callback:(value:string) => void):void {
+		fs.readFile(url, { encoding: 'utf8' }, function (error:Error, data:string):void {
+			if (error) {
+				throw error;
 			}
-			load(data);
+
+			callback(data);
 		});
 	};
 }
+else {
+	getText = function ():void {
+		throw new Error('dojo/text not supported on this platform');
+	};
+}
 
-export function load(id:string, contextRequire:core.Require, loaded:Function):void {
-	getText(id, loaded);
+export function load(resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+	getText(resourceId, load);
 }
