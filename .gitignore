@@ -1,10 +1,5 @@
 .sublimets
 *.js
 *.js.map
-*.d.ts
 node_modules
-tscommand.tmp.txt
-/html-report
-!/interfaces.d.ts
-!/tests/*.d.ts
-!/tests/**/all.js
+!/tests/**/*.js
