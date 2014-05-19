@@ -30,7 +30,7 @@ if (process.argv.length > 2) {
 	});
 }
 
-var req = require('./loader');
+var req = require('../loader');
 require.signal = function(type, args){
 	if(args[0] instanceof Error){
 		console.log('ERROR ' + type + ': ' + args[0]);
@@ -38,7 +38,7 @@ require.signal = function(type, args){
 };
 req({
 	// packages
-	baseUrl: path.dirname(__dirname),
+	baseUrl: path.join(__dirname, '..'),
 	packages: [
 		{ name: 'core', location: 'core' }
 	]

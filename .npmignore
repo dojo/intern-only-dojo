@@ -1,4 +1,8 @@
-*.ts
+.npmignore
+.sublimets
 .travis.yml
+support/
 tests/
+Gruntfile.js
 tslint.json
+*.ts
