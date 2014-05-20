@@ -7,7 +7,8 @@ interface ICallback<T> {
 }
 
 interface IProgressCallback<T> {
-	(data?:T):void;
+	callback:(data?:T) => void;
+	deferred:Deferred<any>;
 }
 
 enum State {
@@ -108,7 +109,7 @@ class Promise<T> {
 			nextTick(function ():void {
 				try {
 					var returnValue:any = callback(fulfilledValue);
-					if (returnValue.then) {
+					if (returnValue && returnValue.then) {
 						returnValue.then(deferred.resolve, deferred.reject, deferred.progress);
 					}
 					else {
@@ -121,10 +122,19 @@ class Promise<T> {
 			});
 		}
 
+		function propogate(deferred:Deferred<any>, state:State, fulfilledValue:T):void {
+			if (state === State.RESOLVED) {
+				deferred.resolve(fulfilledValue);
+			}
+			else {
+				deferred.reject(fulfilledValue);
+			}
+		}
+
 		function fulfill(newState:State, callbacks:ICallback<any>[], value:any):void {
 			if (state !== State.PENDING) {
 				if (has('debug')) {
-					throw new Error('Attempted to fulfill already fulfilled promise');
+					console.warn('Attempted to fulfill already fulfilled promise');
 				}
 
 				return;
@@ -134,7 +144,12 @@ class Promise<T> {
 			fulfilledValue = value;
 
 			for (var i = 0, callback:ICallback<any>; (callback = callbacks[i]); ++i) {
-				execute(callback.deferred, callback.callback, fulfilledValue);
+				if (callback.callback) {
+					execute(callback.deferred, callback.callback, fulfilledValue);
+				}
+				else {
+					propogate(callback.deferred, state, fulfilledValue);
+				}
 			}
 		}
 
@@ -164,23 +179,28 @@ class Promise<T> {
 			var deferred:Deferred<U> = new Deferred();
 
 			if (state === State.PENDING) {
-				onResolved && resolveCallbacks.push({
+				resolveCallbacks.push({
 					deferred: deferred,
 					callback: onResolved
 				});
 
-				onRejected && rejectCallbacks.push({
+				rejectCallbacks.push({
 					deferred: deferred,
 					callback: onRejected
 				});
 
-				onProgress && progressCallbacks.push(onProgress);
+				progressCallbacks.push({
+					deferred: deferred,
+					callback: onProgress
+				});
 			}
 			else if (state === State.RESOLVED && onResolved) {
 				execute(deferred, onResolved, fulfilledValue);
 			}
 			else if (state === State.REJECTED && onRejected) {
 				execute(deferred, onRejected, fulfilledValue);
+			} else {
+				propogate(deferred, state, fulfilledValue);
 			}
 
 			return deferred.promise;
@@ -192,9 +212,16 @@ class Promise<T> {
 				fulfill.bind(null, State.REJECTED, rejectCallbacks),
 				function (data?:any):void {
 					progressCallbacks.forEach(function (callback:IProgressCallback<any>):void {
-						nextTick(function ():void {
-							callback(data);
-						});
+						if (callback.callback) {
+							nextTick(function ():void {
+								callback.callback(data);
+							});
+						}
+						else {
+							nextTick(function ():void {
+								callback.deferred.progress(data);
+							});
+						}
 					});
 				}
 			);
