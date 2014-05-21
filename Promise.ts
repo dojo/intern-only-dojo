@@ -116,7 +116,7 @@ class Promise<T> {
 			});
 		}
 
-		function propogate(deferred:Deferred<any>, newState:Promise.State, fulfilledValue:T):void {
+		function propagate(deferred:Deferred<any>, newState:Promise.State, fulfilledValue:T):void {
 			if (newState === Promise.State.RESOLVED) {
 				deferred.resolve(fulfilledValue);
 			}
@@ -143,7 +143,7 @@ class Promise<T> {
 					execute(callback.deferred, callback.callback, fulfilledValue);
 				}
 				else {
-					propogate(callback.deferred, _state, fulfilledValue);
+					propagate(callback.deferred, _state, fulfilledValue);
 				}
 			}
 		}
@@ -202,7 +202,7 @@ class Promise<T> {
 			else if (_state === Promise.State.REJECTED && onRejected) {
 				execute(deferred, onRejected, fulfilledValue);
 			} else {
-				propogate(deferred, _state, fulfilledValue);
+				propagate(deferred, _state, fulfilledValue);
 			}
 
 			return deferred.promise;
