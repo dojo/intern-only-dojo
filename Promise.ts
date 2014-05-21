@@ -11,12 +11,6 @@ interface IProgressCallback<T> {
 	deferred:Deferred<any>;
 }
 
-enum State {
-	PENDING,
-	RESOLVED,
-	REJECTED
-}
-
 class Deferred<T> {
 	promise:Promise<T>;
 
@@ -99,7 +93,7 @@ class Promise<T> {
 		initializer:(resolve?:(value?:T) => void, reject?:(error?:Error) => void, progress?:(data?:any) => void) => void,
 		aborter?:(error?:Error) => void
 	) {
-		var state:State = State.PENDING;
+		var _state:Promise.State = Promise.State.PENDING;
 		var fulfilledValue:T;
 		var resolveCallbacks:ICallback<T>[] = [];
 		var rejectCallbacks:ICallback<Error>[] = [];
@@ -122,8 +116,8 @@ class Promise<T> {
 			});
 		}
 
-		function propogate(deferred:Deferred<any>, state:State, fulfilledValue:T):void {
-			if (state === State.RESOLVED) {
+		function propogate(deferred:Deferred<any>, newState:Promise.State, fulfilledValue:T):void {
+			if (newState === Promise.State.RESOLVED) {
 				deferred.resolve(fulfilledValue);
 			}
 			else {
@@ -131,16 +125,17 @@ class Promise<T> {
 			}
 		}
 
-		function fulfill(newState:State, callbacks:ICallback<any>[], value:any):void {
-			if (state !== State.PENDING) {
+		function fulfill(newState:Promise.State, callbacks:ICallback<any>[], value:any):void {
+			if (_state !== Promise.State.PENDING) {
 				if (has('debug')) {
-					console.warn('Attempted to fulfill already fulfilled promise');
+					console.warn('Attempted to fulfill and already fulfilled promise');
+					throw new Error('Attempted to fulfill already fulfilled promise');
 				}
 
 				return;
 			}
 
-			state = newState;
+			_state = newState;
 			fulfilledValue = value;
 
 			for (var i = 0, callback:ICallback<any>; (callback = callbacks[i]); ++i) {
@@ -148,13 +143,20 @@ class Promise<T> {
 					execute(callback.deferred, callback.callback, fulfilledValue);
 				}
 				else {
-					propogate(callback.deferred, state, fulfilledValue);
+					propogate(callback.deferred, _state, fulfilledValue);
 				}
 			}
 		}
 
+		// implement the read-only state property
+		Object.defineProperty(this, 'state', {
+			get: function ():Promise.State {
+				return _state;
+			}
+		});
+
 		this.abort = function (reason?:Error):void {
-			if (state !== State.PENDING) {
+			if (_state !== Promise.State.PENDING) {
 				return;
 			}
 
@@ -168,17 +170,17 @@ class Promise<T> {
 			}
 
 			try {
-				fulfill(State.RESOLVED, resolveCallbacks, aborter(reason));
+				fulfill(Promise.State.RESOLVED, resolveCallbacks, aborter(reason));
 			}
 			catch (error) {
-				fulfill(State.REJECTED, rejectCallbacks, error);
+				fulfill(Promise.State.REJECTED, rejectCallbacks, error);
 			}
 		};
 
 		this.then = function <U>(onResolved?:(value?:T) => any, onRejected?:(error?:Error) => any, onProgress?:(data?:any) => void):Promise<U> {
 			var deferred:Deferred<U> = new Deferred();
 
-			if (state === State.PENDING) {
+			if (_state === Promise.State.PENDING) {
 				resolveCallbacks.push({
 					deferred: deferred,
 					callback: onResolved
@@ -194,13 +196,13 @@ class Promise<T> {
 					callback: onProgress
 				});
 			}
-			else if (state === State.RESOLVED && onResolved) {
+			else if (_state === Promise.State.RESOLVED && onResolved) {
 				execute(deferred, onResolved, fulfilledValue);
 			}
-			else if (state === State.REJECTED && onRejected) {
+			else if (_state === Promise.State.REJECTED && onRejected) {
 				execute(deferred, onRejected, fulfilledValue);
 			} else {
-				propogate(deferred, state, fulfilledValue);
+				propogate(deferred, _state, fulfilledValue);
 			}
 
 			return deferred.promise;
@@ -208,8 +210,8 @@ class Promise<T> {
 
 		try {
 			initializer(
-				fulfill.bind(null, State.RESOLVED, resolveCallbacks),
-				fulfill.bind(null, State.REJECTED, rejectCallbacks),
+				fulfill.bind(null, Promise.State.RESOLVED, resolveCallbacks),
+				fulfill.bind(null, Promise.State.REJECTED, rejectCallbacks),
 				function (data?:any):void {
 					progressCallbacks.forEach(function (callback:IProgressCallback<any>):void {
 						if (callback.callback) {
@@ -227,11 +229,13 @@ class Promise<T> {
 			);
 		}
 		catch (error) {
-			fulfill(State.REJECTED, rejectCallbacks, error);
+			fulfill(Promise.State.REJECTED, rejectCallbacks, error);
 		}
 	}
 
 	abort:(reason?:Error) => void;
+
+	state:Promise.State;
 
 	catch<U>(onRejected:(error?:Error) => U):Promise<U>;
 	catch<U>(onRejected:(error?:Error) => Promise<U>):Promise<U>;
@@ -245,6 +249,14 @@ class Promise<T> {
 		<U>(onResolved?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => void):Promise<U>;
 		<U>(onResolved?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => void):Promise<U>;
 	};
+}
+
+module Promise {
+	export enum State {
+		PENDING,
+		RESOLVED,
+		REJECTED
+	}
 }
 
 export = Promise;
