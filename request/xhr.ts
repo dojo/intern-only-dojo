@@ -52,6 +52,9 @@ function xhr(url:string, options:xhr.IRequestOptions):Promise<xhr.IResponse> {
 			response.data = request.response;
 		}
 
+		response.statusCode = request.status;
+		response.statusText = request.statusText;
+
 		deferred.resolve(response);
 	};
 

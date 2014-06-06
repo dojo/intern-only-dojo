@@ -67,8 +67,8 @@ var request = <request> function (url:string, options:request.IRequestOptions):r
 
 	var promise:request.IRequestPromise = request.providerRegistry.match(arguments).apply(null, arguments).then(function (response:request.IResponse):Promise<request.IResponse> {
 		args.unshift(response);
-		return Promise.resolve(request.filterRegistry.match(args).apply(null, args)).then(function (data:any):request.IResponse {
-			response.data = data;
+		return Promise.resolve(request.filterRegistry.match(args).apply(null, args)).then(function (filterResponse:any):request.IResponse {
+			response.data = filterResponse.data;
 			return response;
 		});
 	});
@@ -81,8 +81,8 @@ var request = <request> function (url:string, options:request.IRequestOptions):r
 };
 
 request.providerRegistry = new Registry<request.IRequestProvider>(defaultProvider);
-request.filterRegistry = new Registry<request.IRequestFilter>(function (value:any):any {
-	return value;
+request.filterRegistry = new Registry<request.IRequestFilter>(function (response:any):any {
+	return response;
 });
 
 // TODO: Put somewhere permanent

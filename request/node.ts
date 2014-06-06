@@ -142,6 +142,7 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 
 		deferred.progress({ type: 'nativeResponse', response: nativeResponse });
 		response.nativeResponse = nativeResponse;
+		response.statusCode = nativeResponse.statusCode;
 	});
 
 	request.once('error', deferred.reject);

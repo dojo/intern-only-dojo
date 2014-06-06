@@ -37,6 +37,7 @@ class Promise<T> {
 	static all(iterable:any):Promise<any> {
 		function fulfill(key:string, value:any):void {
 			values[key] = value;
+			++complete;
 			finish();
 		}
 
