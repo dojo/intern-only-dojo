@@ -49,20 +49,31 @@ class Promise<T> {
 			deferred.resolve(values);
 		}
 
-		var values:{ [key:string]:any; } = {};
+		function processItem(key:any):void {
+			++total;
+			var value:any = iterable[key];
+			if (value && value.then) {
+				value.then(fulfill.bind(null, key), fulfill.bind(null, key));
+			}
+			else {
+				fulfill(key, value);
+			}
+		}
+
+		var values:any = Array.isArray(iterable) ? [] : {};
 		var deferred:Deferred<typeof values> = new Deferred();
 		var complete:number = 0;
 		var total:number = 0;
 		var populating:boolean = true;
 
-		for (var key in iterable) {
-			++total;
-			var value:any = iterable[key];
-			if (value.then) {
-				value.then(fulfill.bind(null, key), fulfill.bind(null, key));
+		if (Array.isArray(iterable)) {
+			for (var i = 0; i < iterable.length; i++) {
+				processItem(i);
 			}
-			else {
-				fulfill(key, value);
+		}
+		else {
+			for (var key in iterable) {
+				processItem(key);
 			}
 		}
 
@@ -102,6 +113,11 @@ class Promise<T> {
 
 		function execute(deferred:Deferred<any>, callback:(value?:any) => any, fulfilledValue:T):void {
 			nextTick(function ():void {
+				// handle the case where this promise was fulfilled before nextTick
+				if (deferred.promise.state !== Promise.State.PENDING) {
+					return;
+				}
+
 				try {
 					var returnValue:any = callback(fulfilledValue);
 					if (returnValue && returnValue.then) {
@@ -117,20 +133,24 @@ class Promise<T> {
 			});
 		}
 
-		function propagate(deferred:Deferred<any>, newState:Promise.State, fulfilledValue:T):void {
-			if (newState === Promise.State.RESOLVED) {
-				deferred.resolve(fulfilledValue);
-			}
-			else {
-				deferred.reject(fulfilledValue);
+		function propagate(deferred:Deferred<any>, newState:Promise.State, valueErrorOrData:T):void {
+			switch (newState) {
+				case Promise.State.RESOLVED:
+					deferred.resolve(valueErrorOrData);
+					break;
+				case Promise.State.REJECTED:
+					deferred.reject(valueErrorOrData);
+					break;
+				default:
+					deferred.progress(valueErrorOrData);
 			}
 		}
 
 		function fulfill(newState:Promise.State, callbacks:ICallback<any>[], value:any):void {
 			if (_state !== Promise.State.PENDING) {
 				if (has('debug')) {
-					console.warn('Attempted to fulfill and already fulfilled promise');
-					throw new Error('Attempted to fulfill already fulfilled promise');
+					console.warn('Attempted to fulfill an already fulfilled promise');
+					throw new Error('Attempted to fulfill an already fulfilled promise');
 				}
 
 				return;
@@ -157,10 +177,6 @@ class Promise<T> {
 		});
 
 		this.abort = function (reason?:Error):void {
-			if (_state !== Promise.State.PENDING) {
-				return;
-			}
-
 			if (!aborter) {
 				throw new Error('Promise is not abortable');
 			}
@@ -170,16 +186,31 @@ class Promise<T> {
 				reason.name = 'AbortError';
 			}
 
+			if (_state !== Promise.State.PENDING) {
+				// call the aborter for the most distant non-settled ancestor
+				aborter(reason);
+				return;
+			}
+
 			try {
-				fulfill(Promise.State.RESOLVED, resolveCallbacks, aborter(reason));
+				aborter(reason);
+
+				if (_state === Promise.State.PENDING) {
+					fulfill(Promise.State.RESOLVED, resolveCallbacks, reason);
+				}
 			}
 			catch (error) {
-				fulfill(Promise.State.REJECTED, rejectCallbacks, error);
+				if (_state === Promise.State.PENDING) {
+					fulfill(Promise.State.REJECTED, rejectCallbacks, error);
+				}
 			}
 		};
 
 		this.then = function <U>(onResolved?:(value?:T) => any, onRejected?:(error?:Error) => any, onProgress?:(data?:any) => void):Promise<U> {
-			var deferred:Deferred<U> = new Deferred();
+			var self = this;
+			var deferred:Deferred<U> = new Deferred(function (reason?:Error):void {
+				return aborter && self.abort(reason);
+			});
 
 			if (_state === Promise.State.PENDING) {
 				resolveCallbacks.push({
@@ -203,6 +234,8 @@ class Promise<T> {
 			else if (_state === Promise.State.REJECTED && onRejected) {
 				execute(deferred, onRejected, fulfilledValue);
 			} else {
+				// handle the case where this promise is resolved but ony has a rejection handler,
+				// or vice versa
 				propagate(deferred, _state, fulfilledValue);
 			}
 
@@ -242,6 +275,12 @@ class Promise<T> {
 	catch<U>(onRejected:(error?:Error) => Promise<U>):Promise<U>;
 	catch<U>(onRejected:(error?:Error) => any):Promise<U> {
 		return this.then<U>(null, onRejected);
+	}
+
+	finally<U>(onResolvedOfRejected:(value?:any) => U):Promise<U>;
+	finally<U>(onResolvedOrRejected:(value?:any) => Promise<U>):Promise<U>;
+	finally<U>(onResolvedOrRejected:(value?:any) => any):Promise<U> {
+		return this.then<U>(onResolvedOrRejected, onResolvedOrRejected);
 	}
 
 	then:{
