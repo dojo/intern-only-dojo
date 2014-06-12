@@ -170,7 +170,7 @@ class Promise<T> {
 			resolve?:(value?:T) => void,
 			reject?:(error?:Error) => void,
 			progress?:(data?:any) => void,
-			setCanceler?:(canceler:Promise.ICanceler<T>) => void
+			setCanceler?:(canceler:Promise.ICanceler) => void
 		) => void
 	) {
 		/**
@@ -337,7 +337,7 @@ class Promise<T> {
 		 * cancelation reason; promises representing asynchronous operations that can be cancelled should provide their
 		 * own cancellers.
 		 */
-		var canceler:Promise.ICanceler<T>;
+		var canceler:Promise.ICanceler;
 
 		/**
 		 * Sends progress data from the asynchronous operation to any progress listeners.
@@ -454,7 +454,7 @@ class Promise<T> {
 				fulfill.bind(null, Promise.State.RESOLVED, resolveCallbacks),
 				fulfill.bind(null, Promise.State.REJECTED, rejectCallbacks),
 				sendProgress,
-				function (value:Promise.ICanceler<T>):void {
+				function (value:Promise.ICanceler):void {
 					canceler = value;
 				}
 			);
@@ -519,8 +519,8 @@ class Promise<T> {
 }
 
 module Promise {
-	export interface ICanceler<T> {
-		(reason:Error):T;
+	export interface ICanceler {
+		(reason:Error):any;
 	}
 
 	/**
@@ -532,12 +532,12 @@ module Promise {
 		 */
 		promise:Promise<T>;
 
-		constructor(canceler?:Promise.ICanceler<T>) {
+		constructor(canceler?:Promise.ICanceler) {
 			this.promise = new Promise<T>((
 				resolve:(value?:any) => void,
 				reject:(error?:any) => void,
 				progress:(data?:any) => void,
-				setCanceler:(canceler:Promise.ICanceler<T>) => void
+				setCanceler:(canceler:Promise.ICanceler) => void
 			):void => {
 				this.progress = progress;
 				this.reject = reject;

@@ -55,7 +55,7 @@ module node {
 }
 
 function node(url:string, options:node.INodeRequestOptions):Promise<request.IResponse> {
-	var deferred = new Promise.Deferred(function (reason?:Error):void {
+	var deferred:Promise.Deferred<request.IResponse> = new Promise.Deferred(function (reason:Error):void {
 		request && request.abort();
 		throw reason;
 	});
@@ -164,7 +164,7 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 			var timer = setTimeout(function ():void {
 				var error = new Error('Request timed out after ' + options.timeout + 'ms');
 				error.name = 'RequestTimeoutError';
-				promise.abort(error);
+				promise.cancel(error);
 			}, options.timeout);
 
 			return {
