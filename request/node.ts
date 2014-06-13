@@ -146,7 +146,7 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 
 		nativeResponse.on('data', function (chunk:any):void {
 			options.streamData || data.push(chunk);
-			loaded += Buffer.byteLength(chunk.toString(options.streamEncoding || 'utf8'));
+			loaded += typeof chunk === 'string' ? Buffer.byteLength(chunk, options.streamEncoding) : chunk.length;
 			deferred.progress({ type: 'data', chunk: chunk, loaded: loaded, total: total });
 		});
 
