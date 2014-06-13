@@ -57,7 +57,7 @@ module node {
 }
 
 function normalizeHeaders(headers:{ [name:string]:string; }):{ [name:string]:string; } {
-	var normalizedHeaders:{ [name:string]:string; };
+	var normalizedHeaders:{ [name:string]:string; } = {};
 	for (var key in headers) {
 		normalizedHeaders[key.toLowerCase()] = headers[key];
 	}
