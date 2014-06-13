@@ -2,6 +2,7 @@
 import core = require('../interfaces');
 import http = require('http');
 import https = require('https');
+import kernel = require('../kernel');
 import Promise = require('../Promise');
 import request = require('../request');
 import urlUtil = require('url');
@@ -83,6 +84,10 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		secureProtocol: options.secureProtocol,
 		socketPath: options.socketPath
 	};
+
+	if (!('User-Agent' in requestOptions.headers)) {
+		requestOptions.headers['User-Agent'] = 'dojo/' + kernel.version + ' Node.js/' + process.version.replace(/^v/, '');
+	}
 
 	if (options.proxy) {
 		requestOptions.path = url;
