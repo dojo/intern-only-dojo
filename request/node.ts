@@ -56,6 +56,15 @@ module node {
 	}
 }
 
+function normalizeHeaders(headers:{ [name:string]:string; }):{ [name:string]:string; } {
+	var normalizedHeaders:{ [name:string]:string; };
+	for (var key in headers) {
+		normalizedHeaders[key.toLowerCase()] = headers[key];
+	}
+
+	return normalizedHeaders;
+}
+
 function node(url:string, options:node.INodeRequestOptions):Promise<request.IResponse> {
 	var deferred:Promise.Deferred<request.IResponse> = new Promise.Deferred(function (reason:Error):void {
 		request && request.abort();
@@ -70,7 +79,7 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		ca: options.ca,
 		cert: options.cert,
 		ciphers: options.ciphers,
-		headers: options.headers || {},
+		headers: normalizeHeaders(options.headers || {}),
 		host: parsedUrl.host,
 		hostname: parsedUrl.hostname,
 		key: options.key,
@@ -85,19 +94,19 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		socketPath: options.socketPath
 	};
 
-	if (!('User-Agent' in requestOptions.headers)) {
-		requestOptions.headers['User-Agent'] = 'dojo/' + kernel.version + ' Node.js/' + process.version.replace(/^v/, '');
+	if (!('user-agent' in requestOptions.headers)) {
+		requestOptions.headers['user-agent'] = 'dojo/' + kernel.version + ' Node.js/' + process.version.replace(/^v/, '');
 	}
 
 	if (options.proxy) {
 		requestOptions.path = url;
 		if (parsedUrl.auth) {
-			requestOptions.headers['Proxy-Authorization'] = 'Basic ' + new Buffer(parsedUrl.auth).toString('base64');
+			requestOptions.headers['proxy-authorization'] = 'Basic ' + new Buffer(parsedUrl.auth).toString('base64');
 		}
 
 		(function ():void {
 			var parsedUrl:urlUtil.Url = urlUtil.parse(url);
-			requestOptions.headers['Host'] = parsedUrl.host;
+			requestOptions.headers['host'] = parsedUrl.host;
 			requestOptions.auth = parsedUrl.auth || options.auth;
 		})();
 	}
