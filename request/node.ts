@@ -41,6 +41,7 @@ module node {
 		localAddress?:string;
 		passphrase?:string;
 		pfx?:any;
+		proxy?:string;
 		rejectUnauthorized?:boolean;
 		secureProtocol?:string;
 		socketPath?:string;
@@ -60,14 +61,15 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		throw reason;
 	});
 	var promise:request.IRequestPromise = <request.IRequestPromise> deferred.promise;
-	var parsedUrl:urlUtil.Url = urlUtil.parse(url);
+	var parsedUrl:urlUtil.Url = urlUtil.parse(options.proxy || url);
+
 	var requestOptions:IHttpsOptions = {
 		agent: options.agent,
 		auth: parsedUrl.auth || options.auth,
 		ca: options.ca,
 		cert: options.cert,
 		ciphers: options.ciphers,
-		headers: options.headers,
+		headers: options.headers || {},
 		host: parsedUrl.host,
 		hostname: parsedUrl.hostname,
 		key: options.key,
@@ -81,6 +83,19 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		secureProtocol: options.secureProtocol,
 		socketPath: options.socketPath
 	};
+
+	if (options.proxy) {
+		requestOptions.path = url;
+		if (parsedUrl.auth) {
+			requestOptions.headers['Proxy-Authorization'] = 'Basic ' + new Buffer(parsedUrl.auth).toString('base64');
+		}
+
+		(function ():void {
+			var parsedUrl:urlUtil.Url = urlUtil.parse(url);
+			requestOptions.headers['Host'] = parsedUrl.host;
+			requestOptions.auth = parsedUrl.auth || options.auth;
+		})();
+	}
 
 	if (!options.auth && (options.user || options.password)) {
 		requestOptions.auth = encodeURIComponent(options.user || '') + ':' + encodeURIComponent(options.password || '');
