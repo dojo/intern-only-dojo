@@ -12,7 +12,7 @@ module xhr {
 }
 
 function xhr(url:string, options:xhr.IRequestOptions):Promise<xhr.IResponse> {
-	var deferred = new Promise.Deferred(function (reason?:Error):void {
+	var deferred:Promise.Deferred<xhr.IResponse> = new Promise.Deferred(function (reason:Error):void {
 		request && request.abort();
 		throw reason;
 	});
