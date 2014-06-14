@@ -225,8 +225,6 @@ class Promise<T> {
 	) {
 		/**
 		 * The current state of this promise.
-		 *
-		 * @type {Promise.State}
 		 */
 		var state:Promise.State = Promise.State.PENDING;
 		Object.defineProperty(this, 'state', {
@@ -235,28 +233,27 @@ class Promise<T> {
 			}
 		});
 
-		function isSettled():boolean {
+		/**
+		 * Whether or not this promise is in a resolved state.
+		 */
+		function isResolved():boolean {
 			return state !== Promise.State.PENDING || isChained;
 		}
 
 		/**
-		 * If true, the fulfillment of this promise is chained to another promise.
-		 *
-		 * @type {boolean}
+		 * If true, the resolution of this promise is chained to another promise.
 		 */
 		var isChained:boolean = false;
 
 		/**
-		 * The fulfilled value for this promise.
+		 * The resolved value for this promise.
 		 *
 		 * @type {T|Error}
 		 */
-		var fulfilledValue:any;
+		var resolvedValue:any;
 
 		/**
 		 * Callbacks that should be invoked once the asynchronous operation has completed.
-		 *
-		 * @type {Array.<() => void>}
 		 */
 		var callbacks:Array<() => void> = [];
 		var whenFinished = function (callback:() => void):void {
@@ -271,6 +268,9 @@ class Promise<T> {
 			progressCallbacks.push(callback);
 		};
 
+		/**
+		 * A canceler function that will be used to cancel resolution of this promise.
+		 */
 		var canceler:Promise.ICanceler;
 
 		/**
@@ -316,39 +316,43 @@ class Promise<T> {
 		})();
 
 		/**
-		 * Fulfills this promise.
+		 * Resolves this promise.
 		 *
-		 * @param newState The fulfilled state for this promise.
-		 * @param {T|Error} value The fulfilled value for this promise.
+		 * @param newState The resolved state for this promise.
+		 * @param {T|Error} value The resolved value for this promise.
 		 */
-		var fulfill = function (newState:Promise.State, value:any):void {
-			if (isSettled()) {
+		var resolve = function (newState:Promise.State, value:any):void {
+			if (isResolved()) {
 				return;
 			}
 
 			if (isPromise(value)) {
-				state = Promise.State.PENDING_CHAINED;
-
 				if (value === this) {
 					throw new TypeError('Cannot chain a promise to itself');
 				}
 
 				isChained = true;
 				value.then(
-					finalize.bind(null, Promise.State.RESOLVED),
-					finalize.bind(null, Promise.State.REJECTED)
+					settle.bind(null, Promise.State.FULFILLED),
+					settle.bind(null, Promise.State.REJECTED)
 				);
 
 				this.cancel = value.cancel;
 			}
 			else {
-				finalize(newState, value);
+				settle(newState, value);
 			}
 		}.bind(this);
 
-		function finalize(newState:Promise.State, value:any):void {
+		/**
+		 * Settles this promise.
+		 *
+		 * @param newState The resolved state for this promise.
+		 * @param {T|Error} value The resolved value for this promise.
+		 */
+		function settle(newState:Promise.State, value:any):void {
 			state = newState;
-			fulfilledValue = value;
+			resolvedValue = value;
 			whenFinished = enqueue;
 			whenProgress = function ():void {};
 			enqueue(function ():void {
@@ -358,7 +362,7 @@ class Promise<T> {
 		}
 
 		this.cancel = function (reason?:Error):void {
-			if (isSettled()) {
+			if (isResolved() || !canceler) {
 				return;
 			}
 
@@ -367,13 +371,11 @@ class Promise<T> {
 				reason.name = 'CancelError';
 			}
 
-			if (canceler) {
-				try {
-					fulfill(Promise.State.RESOLVED, canceler(reason));
-				}
-				catch (error) {
-					fulfill(Promise.State.REJECTED, error);
-				}
+			try {
+				resolve(Promise.State.FULFILLED, canceler(reason));
+			}
+			catch (error) {
+				settle(Promise.State.REJECTED, error);
 			}
 		};
 
@@ -418,17 +420,17 @@ class Promise<T> {
 
 					if (typeof callback === 'function') {
 						try {
-							resolve(callback(fulfilledValue));
+							resolve(callback(resolvedValue));
 						}
 						catch (error) {
 							reject(error);
 						}
 					}
 					else if (state === Promise.State.REJECTED) {
-						reject(fulfilledValue);
+						reject(resolvedValue);
 					}
 					else {
-						resolve(fulfilledValue);
+						resolve(resolvedValue);
 					}
 				});
 			});
@@ -436,8 +438,8 @@ class Promise<T> {
 
 		try {
 			initializer(
-				fulfill.bind(null, Promise.State.RESOLVED),
-				fulfill.bind(null, Promise.State.REJECTED),
+				resolve.bind(null, Promise.State.FULFILLED),
+				resolve.bind(null, Promise.State.REJECTED),
 				function (data?:any):void {
 					enqueue(runCallbacks.bind(null, progressCallbacks, data));
 				},
@@ -447,7 +449,7 @@ class Promise<T> {
 			);
 		}
 		catch (error) {
-			fulfill(Promise.State.REJECTED, error);
+			settle(Promise.State.REJECTED, error);
 		}
 	}
 
@@ -481,16 +483,16 @@ class Promise<T> {
 	 * Adds a callback to the promise to be invoked regardless of whether or not the asynchronous operation completed
 	 * successfully.
 	 */
-	finally<U>(onResolvedOrRejected:(value?:any) => U):Promise<U>;
-	finally<U>(onResolvedOrRejected:(value?:any) => Promise<U>):Promise<U>;
-	finally<U>(onResolvedOrRejected:(value?:any) => any):Promise<U> {
-		return this.then<U>(onResolvedOrRejected, onResolvedOrRejected);
+	finally<U>(onFulfilledOrRejected:(value?:any) => U):Promise<U>;
+	finally<U>(onFulfilledOrRejected:(value?:any) => Promise<U>):Promise<U>;
+	finally<U>(onFulfilledOrRejected:(value?:any) => any):Promise<U> {
+		return this.then<U>(onFulfilledOrRejected, onFulfilledOrRejected);
 	}
 
 	/**
 	 * Adds a callback to the promise to be invoked when progress occurs within the asynchronous operation.
 	 */
-	progress(onProgress:(data?:any) => void):Promise<T> {
+	progress(onProgress:(data?:any) => any):Promise<T> {
 		return this.then<T>(null, null, onProgress);
 	}
 
@@ -498,10 +500,10 @@ class Promise<T> {
 	 * Adds a callback to the promise to be invoked when the asynchronous operation completes successfully.
 	 */
 	then:{
-		<U>(onResolved?:(value?:T) => U,          onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => void):Promise<U>;
-		<U>(onResolved?:(value?:T) => U,          onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => void):Promise<U>;
-		<U>(onResolved?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => void):Promise<U>;
-		<U>(onResolved?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => void):Promise<U>;
+		<U>(onFulfilled?:(value?:T) => U,          onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => any):Promise<U>;
+		<U>(onFulfilled?:(value?:T) => U,          onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => any):Promise<U>;
+		<U>(onFulfilled?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => any):Promise<U>;
+		<U>(onFulfilled?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => any):Promise<U>;
 	};
 
 	// workaround for TS#2557
@@ -532,7 +534,7 @@ module Promise {
 		 * Rejects the underlying promise with an error.
 		 *
 		 * @method
-		 * @param error The error that should be used as the fulfilled value for the promise.
+		 * @param error The error that should be used as the resolved value for the promise.
 		 */
 		reject:(error?:Error) => void;
 
@@ -540,7 +542,7 @@ module Promise {
 		 * Resolves the underlying promise with a value.
 		 *
 		 * @method
-		 * @param value The value that should be used as the fulfilled value for the promise.
+		 * @param value The value that should be used as the resolved value for the promise.
 		 */
 		resolve:(value?:T) => void;
 	}
@@ -550,8 +552,7 @@ module Promise {
 	 */
 	export enum State {
 		PENDING,
-		PENDING_CHAINED,
-		RESOLVED,
+		FULFILLED,
 		REJECTED
 	}
 }
