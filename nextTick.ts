@@ -12,7 +12,20 @@ function noop():void {}
 
 var nextTick:(callback:() => void) => core.IHandle;
 
-if (has('host-node')) {
+// Node.JS 0.10 added `setImmediate` and then started throwing warnings when people called `nextTick` recursively;
+// Node.JS 0.11 supposedly removes this behaviour, so only target 0.10
+if (has('host-node') && typeof setImmediate !== 'undefined' && process.version.indexOf('v0.10.') === 0) {
+	nextTick = function (callback:() => void):core.IHandle {
+		var timer = setImmediate(callback);
+		return {
+			remove: function ():void {
+				this.remove = noop;
+				clearImmediate(timer);
+			}
+		};
+	};
+}
+else if (has('host-node')) {
 	nextTick = function (callback:() => void):core.IHandle {
 		var removed = false;
 		process.nextTick(function ():void {
