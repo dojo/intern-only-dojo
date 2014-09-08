@@ -53,6 +53,7 @@ module node {
 		};
 		streamData?:boolean;
 		streamEncoding?:string;
+		streamTarget?:any;
 	}
 }
 
@@ -149,6 +150,10 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 
 		if (!options.streamData) {
 			data = [];
+		}
+
+		if(options.streamTarget) {
+			nativeResponse.pipe(options.streamTarget);
 		}
 
 		options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
