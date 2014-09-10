@@ -208,7 +208,21 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		}
 	});
 
-	request.once('error', deferred.reject);
+	// Use `any` type for error because Error type doesn't include the `stack` property
+	request.once('error', function (error:any):void {
+		var parsedUrl = urlUtil.parse(url);
+		if (parsedUrl.auth) {
+			parsedUrl.auth = '***';
+		}
+		var sanitizedUrl = urlUtil.format(parsedUrl);
+
+		// The first line of the stack will contain the error message -- replace it with the new message
+		var message = error.name + ': ' + error.message;
+		var newMessage = '[' + error.message + '] while connecting to ' + sanitizedUrl;
+		error.stack = error.name + ': ' + newMessage + error.stack.slice(message.length);
+		error.message = newMessage;
+		deferred.reject(error);
+	});
 
 	if (options.data) {
 		if (options.data.pipe) {
