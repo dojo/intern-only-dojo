@@ -6,12 +6,12 @@ import Promise = require('./Promise');
 import Registry = require('./Registry');
 
 module request {
-	export interface IRequestFilter {
-		(response:IResponse, url:string, options:IRequestOptions):any;
+	export interface IRequestError extends Error {
+		response:request.IResponse;
 	}
 
-	export interface IRequestProvider {
-		(url:string, options:IRequestOptions):IRequestPromise;
+	export interface IRequestFilter {
+		(response:IResponse, url:string, options:IRequestOptions):any;
 	}
 
 	export interface IRequestOptions {
@@ -29,6 +29,10 @@ module request {
 
 	export interface IRequestPromise extends Promise<IResponse> {
 		data:Promise<any>;
+	}
+
+	export interface IRequestProvider {
+		(url:string, options:IRequestOptions):IRequestPromise;
 	}
 
 	export interface IResponse {

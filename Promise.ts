@@ -544,7 +544,10 @@ module Promise {
 		 * @method
 		 * @param value The value that should be used as the resolved value for the promise.
 		 */
-		resolve:(value?:T) => void;
+		resolve:{
+			(value?:T):void;
+			(value?:Promise<T>):void;
+		};
 	}
 
 	/**

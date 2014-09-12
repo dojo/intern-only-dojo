@@ -57,6 +57,13 @@ module node {
 	}
 }
 
+function createServerError(statusCode:number, response:request.IResponse):request.IRequestError {
+	var error:request.IRequestError = <any> new Error('Server returned status code ' + statusCode);
+	error.name = 'RequestServerError';
+	error.response = response;
+	return error;
+}
+
 function normalizeHeaders(headers:{ [name:string]:string; }):{ [name:string]:string; } {
 	var normalizedHeaders:{ [name:string]:string; } = {};
 	for (var key in headers) {
@@ -85,7 +92,7 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		hostname: parsedUrl.hostname,
 		key: options.key,
 		localAddress: options.localAddress,
-		method: options.method,
+		method: options.method ? options.method.toUpperCase() : 'GET',
 		passphrase: options.passphrase,
 		path: parsedUrl.path,
 		pfx: options.pfx,
@@ -148,35 +155,57 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		var loaded:number = 0;
 		var total:number = +nativeResponse.headers['content-length'];
 
-		if (!options.streamData) {
-			data = [];
-		}
-
-		if(options.streamTarget) {
-			nativeResponse.pipe(options.streamTarget);
-		}
-
-		options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
-
-		nativeResponse.on('data', function (chunk:any):void {
-			options.streamData || data.push(chunk);
-			loaded += typeof chunk === 'string' ? Buffer.byteLength(chunk, options.streamEncoding) : chunk.length;
-			deferred.progress({ type: 'data', chunk: chunk, loaded: loaded, total: total });
-		});
-
-		nativeResponse.once('end', function ():void {
-			timeout && timeout.remove();
-
-			if (!options.streamData) {
-				response.data = options.streamEncoding ? data.join('') : Buffer.concat(data, loaded);
-			}
-
-			deferred.resolve(response);
-		});
-
-		deferred.progress({ type: 'nativeResponse', response: nativeResponse });
 		response.nativeResponse = nativeResponse;
 		response.statusCode = nativeResponse.statusCode;
+
+		if (response.statusCode >= 400) {
+			deferred.reject(createServerError(nativeResponse.statusCode, response));
+		}
+		// TODO: This redirect code is not correct according to the RFC; needs to handle redirect loops and
+		// allow some status codes to redirect automatically
+		else if (response.statusCode >= 300) {
+			if (
+				nativeResponse.headers.location &&
+				(requestOptions.method === 'GET' || requestOptions.method === 'POST')
+			) {
+				deferred.progress({
+					type: 'redirect',
+					location: nativeResponse.headers.location,
+					response: nativeResponse
+				});
+
+				deferred.resolve(node(nativeResponse.headers.location, options));
+			}
+			else {
+				deferred.reject(createServerError(nativeResponse.statusCode, response));
+			}
+		}
+		else {
+			if (!options.streamData) {
+				data = [];
+			}
+
+			options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
+			options.streamTarget && nativeResponse.pipe(options.streamTarget);
+
+			nativeResponse.on('data', function (chunk:any):void {
+				options.streamData || data.push(chunk);
+				loaded += typeof chunk === 'string' ? Buffer.byteLength(chunk, options.streamEncoding) : chunk.length;
+				deferred.progress({ type: 'data', chunk: chunk, loaded: loaded, total: total });
+			});
+
+			nativeResponse.once('end', function ():void {
+				timeout && timeout.remove();
+
+				if (!options.streamData) {
+					response.data = options.streamEncoding ? data.join('') : Buffer.concat(data, loaded);
+				}
+
+				deferred.resolve(response);
+			});
+
+			deferred.progress({ type: 'nativeResponse', response: nativeResponse });
+		}
 	});
 
 	request.once('error', deferred.reject);
