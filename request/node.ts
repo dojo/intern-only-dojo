@@ -157,7 +157,7 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 		// TODO: This redirect code is not 100% correct according to the RFC; needs to handle redirect loops and
 		// restrict/modify certain redirects
 		if (
-			response.statusCode >= 300 && response.statusCode !== 304 &&
+			response.statusCode >= 300 && response.statusCode < 400 && response.statusCode !== 304 &&
 			options.followRedirects !== false &&
 			nativeResponse.headers.location
 		) {
