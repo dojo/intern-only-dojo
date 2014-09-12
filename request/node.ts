@@ -38,6 +38,7 @@ module node {
 		cert?:string;
 		ciphers?:string;
 		dataEncoding?:string;
+		followRedirects?:boolean;
 		key?:string;
 		localAddress?:string;
 		passphrase?:string;
@@ -57,13 +58,6 @@ module node {
 	}
 }
 
-function createServerError(statusCode:number, response:request.IResponse):request.IRequestError {
-	var error:request.IRequestError = <any> new Error('Server returned status code ' + statusCode);
-	error.name = 'RequestServerError';
-	error.response = response;
-	return error;
-}
-
 function normalizeHeaders(headers:{ [name:string]:string; }):{ [name:string]:string; } {
 	var normalizedHeaders:{ [name:string]:string; } = {};
 	for (var key in headers) {
@@ -73,7 +67,7 @@ function normalizeHeaders(headers:{ [name:string]:string; }):{ [name:string]:str
 	return normalizedHeaders;
 }
 
-function node(url:string, options:node.INodeRequestOptions):Promise<request.IResponse> {
+function node(url:string, options:node.INodeRequestOptions = {}):Promise<request.IResponse> {
 	var deferred:Promise.Deferred<request.IResponse> = new Promise.Deferred(function (reason:Error):void {
 		request && request.abort();
 		throw reason;
@@ -158,71 +152,52 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		response.nativeResponse = nativeResponse;
 		response.statusCode = nativeResponse.statusCode;
 
-		if (response.statusCode >= 400) {
-			deferred.reject(createServerError(nativeResponse.statusCode, response));
-		}
-		// TODO: This redirect code is not correct according to the RFC; needs to handle redirect loops and
-		// allow some status codes to redirect automatically
-		else if (response.statusCode >= 300) {
-			if (
-				nativeResponse.headers.location &&
-				(requestOptions.method === 'GET' || requestOptions.method === 'POST')
-			) {
-				deferred.progress({
-					type: 'redirect',
-					location: nativeResponse.headers.location,
-					response: nativeResponse
-				});
+		// Redirection handling defaults to true in order to harmonise with the XHR provider, which will always
+		// follow redirects
+		// TODO: This redirect code is not 100% correct according to the RFC; needs to handle redirect loops and
+		// restrict/modify certain redirects
+		if (
+			response.statusCode >= 300 && response.statusCode !== 304 &&
+			options.followRedirects !== false &&
+			nativeResponse.headers.location
+		) {
+			deferred.progress({
+				type: 'redirect',
+				location: nativeResponse.headers.location,
+				response: nativeResponse
+			});
 
-				deferred.resolve(node(nativeResponse.headers.location, options));
-			}
-			else {
-				deferred.reject(createServerError(nativeResponse.statusCode, response));
-			}
+			deferred.resolve(node(nativeResponse.headers.location, options));
+			return;
 		}
-		else {
+
+		if (!options.streamData) {
+			data = [];
+		}
+
+		options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
+		options.streamTarget && nativeResponse.pipe(options.streamTarget);
+
+		nativeResponse.on('data', function (chunk:any):void {
+			options.streamData || data.push(chunk);
+			loaded += typeof chunk === 'string' ? Buffer.byteLength(chunk, options.streamEncoding) : chunk.length;
+			deferred.progress({ type: 'data', chunk: chunk, loaded: loaded, total: total });
+		});
+
+		nativeResponse.once('end', function ():void {
+			timeout && timeout.remove();
+
 			if (!options.streamData) {
-				data = [];
+				response.data = options.streamEncoding ? data.join('') : Buffer.concat(data, loaded);
 			}
 
-			options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
-			options.streamTarget && nativeResponse.pipe(options.streamTarget);
+			deferred.resolve(response);
+		});
 
-			nativeResponse.on('data', function (chunk:any):void {
-				options.streamData || data.push(chunk);
-				loaded += typeof chunk === 'string' ? Buffer.byteLength(chunk, options.streamEncoding) : chunk.length;
-				deferred.progress({ type: 'data', chunk: chunk, loaded: loaded, total: total });
-			});
-
-			nativeResponse.once('end', function ():void {
-				timeout && timeout.remove();
-
-				if (!options.streamData) {
-					response.data = options.streamEncoding ? data.join('') : Buffer.concat(data, loaded);
-				}
-
-				deferred.resolve(response);
-			});
-
-			deferred.progress({ type: 'nativeResponse', response: nativeResponse });
-		}
+		deferred.progress({ type: 'nativeResponse', response: nativeResponse });
 	});
 
-	// Use `any` type for error because Error type doesn't include the `stack` property
-	request.once('error', function (error:any):void {
-		var parsedUrl = urlUtil.parse(url);
-		if (parsedUrl.auth) {
-			parsedUrl.auth = '***';
-		}
-		var sanitizedUrl = urlUtil.format(parsedUrl);
-
-		// The first line of the stack will contain the error message -- replace it with the new message
-		var message = error.name + ': ' + error.message;
-		var newMessage = '[' + error.message + '] while connecting to ' + sanitizedUrl;
-		error.stack = error.name + ': ' + newMessage + error.stack.slice(message.length);
-		error.message = newMessage;
-		deferred.reject(error);
-	});
+	request.once('error', deferred.reject);
 
 	if (options.data) {
 		if (options.data.pipe) {
@@ -253,7 +228,19 @@ function node(url:string, options:node.INodeRequestOptions):Promise<request.IRes
 		})();
 	}
 
-	return promise;
+	return promise.catch(function (error:Error):any {
+		var parsedUrl:urlUtil.UrlOptions = urlUtil.parse(url);
+
+		if (parsedUrl.auth) {
+			parsedUrl.auth = '(redacted)';
+		}
+
+		var sanitizedUrl:string = urlUtil.format(parsedUrl);
+
+		error.message = '[' + requestOptions.method + ' ' + sanitizedUrl + '] ' + error.message;
+
+		throw error;
+	});
 }
 
 export = node;

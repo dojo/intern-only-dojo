@@ -66,7 +66,7 @@ interface request extends request.IRequestProvider {
 	put(url:string, options?:request.IRequestOptions):request.IRequestPromise;
 }
 
-var request = <request> function (url:string, options:request.IRequestOptions):request.IRequestPromise {
+var request = <request> function (url:string, options:request.IRequestOptions = {}):request.IRequestPromise {
 	var args:any[] = Array.prototype.slice.call(arguments, 0);
 
 	var promise:request.IRequestPromise = request.providerRegistry.match(arguments).apply(null, arguments).then(function (response:request.IResponse):Promise<request.IResponse> {
