@@ -1,6 +1,6 @@
 {
   "name": "dojo",
-  "version": "2.0.0-alpha2",
+  "version": "2.0.0-dev",
   "scripts": {
     "prepublish": "support/prepublish.sh"
   },
