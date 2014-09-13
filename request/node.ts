@@ -176,7 +176,18 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 		}
 
 		options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
-		options.streamTarget && nativeResponse.pipe(options.streamTarget);
+		if (options.streamTarget) {
+			nativeResponse.pipe(options.streamTarget);
+			options.streamTarget.once('error', function (error:request.IRequestError):void {
+				nativeResponse.unpipe(options.streamTarget);
+				request.abort();
+				error.response = response;
+				deferred.reject(error);
+			});
+			options.streamTarget.once('finish', function ():void {
+				deferred.resolve(response);
+			});
+		}
 
 		nativeResponse.on('data', function (chunk:any):void {
 			options.streamData || data.push(chunk);
@@ -191,7 +202,10 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 				response.data = options.streamEncoding ? data.join('') : Buffer.concat(data, loaded);
 			}
 
-			deferred.resolve(response);
+			// If using a streamTarget, wait for it to finish in case it throws an error
+			if (!options.streamTarget) {
+				deferred.resolve(response);
+			}
 		});
 
 		deferred.progress({ type: 'nativeResponse', response: nativeResponse });
