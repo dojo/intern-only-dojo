@@ -441,7 +441,9 @@ class Promise<T> {
 				resolve.bind(null, Promise.State.FULFILLED),
 				resolve.bind(null, Promise.State.REJECTED),
 				function (data?:any):void {
-					enqueue(runCallbacks.bind(null, progressCallbacks, data));
+					if (state === Promise.State.PENDING) {
+						enqueue(runCallbacks.bind(null, progressCallbacks, data));
+					}
 				},
 				function (value:Promise.ICanceler):void {
 					canceler = value;
