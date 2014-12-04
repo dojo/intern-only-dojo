@@ -3,10 +3,6 @@ import string = require('./string');
 
 declare var exports:any;
 
-if (!navigator.cookieEnabled) {
-	return null;
-}
-
 var longAgo = new Date(1970, 0, 1).toUTCString();
 
 export interface IOptions {

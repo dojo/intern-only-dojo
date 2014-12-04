@@ -67,7 +67,9 @@ else {
 	}
 	else {
 		nextTick = (function ():typeof nextTick {
-			var timer:number;
+			// Node.js returns a Timer object from setTimeout,
+			// HTML5 specifies a number
+			var timer:any;
 			return function (callback:() => void):core.IHandle {
 				var handle = queue.add(callback);
 
