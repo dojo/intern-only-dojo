@@ -184,7 +184,7 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 				error.response = response;
 				deferred.reject(error);
 			});
-			options.streamTarget.once('finish', function ():void {
+			options.streamTarget.once('close', function ():void {
 				deferred.resolve(response);
 			});
 		}
