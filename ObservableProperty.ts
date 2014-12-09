@@ -9,10 +9,10 @@ class ObservableProperty<T> extends Observable {
 	private _handle:core.IHandle;
 
 	get value():T {
-		return this._observable[this._propertyName];
+		return (<any>this._observable)[this._propertyName];
 	}
 	set value(value:T) {
-		this._observable[this._propertyName] = value;
+		(<any>this._observable)[this._propertyName] = value;
 	}
 
 	constructor(observable:core.IObservable, property:string) {

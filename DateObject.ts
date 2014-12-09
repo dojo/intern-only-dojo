@@ -40,11 +40,11 @@ class DateObject implements core.IDateObject {
 			_date = new Date(
 				value.year,
 				value.month - 1,
-				value.dayOfMonth||1,
-				value.hours||0,
-				value.minutes||0,
-				value.seconds||0,
-				value.milliseconds||0
+				value.dayOfMonth || 1,
+				value.hours || 0,
+				value.minutes || 0,
+				value.seconds || 0,
+				value.milliseconds || 0
 			);
 		}
 
@@ -224,12 +224,12 @@ class DateObject implements core.IDateObject {
 
 		// perform from year -> milliseconds in case the year
 		// and month operations cause an overshoot
-		operationOrder.forEach((property) => {
+		operationOrder.forEach((property:string):void => {
 			if (!(property in value)) {
 				return;
 			}
 
-			result[property] += value[property];
+			(<any>result)[property] += (<any>value)[property];
 		});
 		return result;
 	}
