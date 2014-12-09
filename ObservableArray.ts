@@ -159,7 +159,7 @@ Object.getOwnPropertyNames(Array.prototype).forEach((name:string) => {
 	var descriptor = Object.getOwnPropertyDescriptor(Array.prototype, name);
 
 	if (name in oldPrototype) {
-		descriptor.value = oldPrototype[name];
+		descriptor.value = (<any> oldPrototype)[name];
 	}
 
 	Object.defineProperty(newPrototype, name, descriptor);

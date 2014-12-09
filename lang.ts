@@ -24,7 +24,7 @@ export function setProperty(object:any, propertyName:string, value:any):void {
 	var property:string = getDottedProperty(object, parts, true);
 
 	if (property && part) {
-		property[part] = value;
+		(<any> property)[part] = value;
 		return value;
 	}
 }

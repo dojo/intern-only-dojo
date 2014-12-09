@@ -6,7 +6,7 @@ class Evented {
 	on(type:string, listener:(...args:any[]) => void):core.IHandle {
 		return on.parse(this, type, listener, this, (target:Evented, type:string):core.IHandle => {
 			var name = '__on' + type;
-			if (!this[name]) {
+			if (!(<any> this)[name]) {
 				Object.defineProperty(this, name, {
 					configurable: true,
 					value: undefined,
@@ -19,8 +19,9 @@ class Evented {
 
 	emit(type:string, ...args:any[]):boolean {
 		type = '__on' + type;
-		if (this[type]) {
-			return this[type].apply(this, args);
+		var method:Function = (<any> this)[type];
+		if (method) {
+			return method.apply(this, args);
 		}
 	}
 }

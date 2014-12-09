@@ -17,7 +17,7 @@ function createCookieOptions(options:IOptions):string {
 	var optionsString = '';
 
 	for (var key in options) {
-		var value = options[key];
+		var value = (<any> options)[key];
 
 		if (key === 'maxAge') {
 			key = 'max-age';

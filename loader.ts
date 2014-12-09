@@ -220,7 +220,7 @@ export interface IRootRequire extends IRequire {
 				var result:IMapItem[] = <IMapItem[]> [];
 
 				for (var moduleId in map) {
-					var value:any = map[moduleId];
+					var value:any = (<any> map)[moduleId];
 					var valueIsMapReplacement:boolean = typeof value === 'object';
 
 					result.push(<IMapItem> {
@@ -231,7 +231,7 @@ export interface IRootRequire extends IRequire {
 					});
 
 					if (valueIsMapReplacement && moduleId === '*') {
-						result['star'] = <IMapSource> item[1];
+						(<any> result)['star'] = <IMapSource> (<any> item)[1];
 					}
 				}
 
@@ -321,7 +321,7 @@ export interface IRootRequire extends IRequire {
 
 	function mix(target:Object, source:Object):Object {
 		for (var key in source) {
-			target[key] = source[key];
+			(<any> target)[key] = (<any> source)[key];
 		}
 		return target;
 	}
@@ -632,7 +632,7 @@ export interface IRootRequire extends IRequire {
 
 			// if result defines load, just assume it's a plugin; harmless if the assumption is wrong
 			result && result.load && [ 'dynamic', 'normalize', 'load' ].forEach(function (key:string):void {
-				module[key] = result[key];
+				(<any> module)[key] = (<any> result)[key];
 			});
 
 			// for plugins, resolve the loadQ
@@ -743,7 +743,7 @@ export interface IRootRequire extends IRequire {
 				consumePendingCacheInsert(module);
 
 				if (has('loader-ie9-compat') && node) {
-					defArgs = node['defArgs'];
+					defArgs = (<any> node)['defArgs'];
 				}
 
 				// non-amd module
@@ -963,8 +963,8 @@ export interface IRootRequire extends IRequire {
 
 		if (has('loader-ie9-compat')) {
 			for (var i = document.scripts.length - 1, script:Element; (script = document.scripts[i]); --i) {
-				if (script['readyState'] === 'interactive') {
-					script['defArgs'] = [ deps, factory ];
+				if ((<any> script)['readyState'] === 'interactive') {
+					(<any> script)['defArgs'] = [ deps, factory ];
 					break;
 				}
 			}
