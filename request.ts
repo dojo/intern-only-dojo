@@ -97,7 +97,7 @@ request.filterRegistry.register(function (response:request.IResponse, url:string
 });
 
 [ 'delete', 'get', 'post', 'put' ].forEach(function (method:string):void {
-	(<any> request)[method] = function (url:string, options:request.IRequestOptions):request.IRequestPromise {
+	(<any>request)[method] = function (url:string, options:request.IRequestOptions):request.IRequestPromise {
 		options = Object.create(options);
 		options.method = method.toUpperCase();
 		return request(url, options);

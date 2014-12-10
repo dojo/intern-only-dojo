@@ -1,4 +1,3 @@
-import core = require('./interfaces');
 import string = require('./string');
 
 declare var exports:any;
@@ -17,7 +16,7 @@ function createCookieOptions(options:IOptions):string {
 	var optionsString = '';
 
 	for (var key in options) {
-		var value = (<any> options)[key];
+		var value:any = (<any>options)[key];
 
 		if (key === 'maxAge') {
 			key = 'max-age';

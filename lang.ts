@@ -21,10 +21,10 @@ function getDottedProperty(object:any, parts:string[], create:boolean):any {
 export function setProperty(object:any, propertyName:string, value:any):void {
 	var parts:string[] = propertyName.split('.');
 	var part:string = parts.pop();
-	var property:string = getDottedProperty(object, parts, true);
+	var property:any = getDottedProperty(object, parts, true);
 
 	if (property && part) {
-		(<any> property)[part] = value;
+		property[part] = value;
 		return value;
 	}
 }

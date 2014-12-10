@@ -4,11 +4,11 @@ declare var process:any;
 declare var require:<ModuleType>(moduleId:string) => ModuleType;
 declare var module:{ exports:any; };
 
-export interface IConfig extends Object {
+export interface IConfig {
 	baseUrl?:string;
 	map?:IModuleMap;
 	packages?:IPackage[];
-	paths?:IPathMap;
+	paths?:{ [path:string]:string; };
 }
 
 export interface IDefine {
@@ -77,7 +77,9 @@ export interface IModuleMap extends IModuleMapItem {
 	[sourceMid:string]:IModuleMapReplacement;
 }
 
-export interface IModuleMapItem {}
+export interface IModuleMapItem {
+	[mid:string]:/*IModuleMapReplacement|IModuleMap*/any;
+}
 
 export interface IModuleMapReplacement extends IModuleMapItem {
 	[findMid:string]:/* replaceMid */string;
@@ -217,21 +219,22 @@ export interface IRootRequire extends IRequire {
 				//     original module id length
 				// ]
 
-				var result:IMapItem[] = <IMapItem[]> [];
+				var result:IMapItem[] = [];
 
 				for (var moduleId in map) {
 					var value:any = (<any> map)[moduleId];
 					var valueIsMapReplacement:boolean = typeof value === 'object';
 
-					result.push(<IMapItem> {
+					var item = <IMapItem> {
 						0: moduleId,
 						1: valueIsMapReplacement ? computeMapProg(value) : value,
 						2: new RegExp('^' + moduleId.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&') + '(?:\/|$)'),
 						3: moduleId.length
-					});
+					};
+					result.push(item);
 
 					if (valueIsMapReplacement && moduleId === '*') {
-						(<any> result)['star'] = <IMapSource> (<any> item)[1];
+						(<IMapRoot>result).star = item[1];
 					}
 				}
 
@@ -319,9 +322,9 @@ export interface IRootRequire extends IRequire {
 		array && array.forEach(callback);
 	}
 
-	function mix(target:Object, source:Object):Object {
+	function mix(target:{}, source:{}):{} {
 		for (var key in source) {
-			(<any> target)[key] = (<any> source)[key];
+			(<any>target)[key] = (<any>source)[key];
 		}
 		return target;
 	}
@@ -632,7 +635,7 @@ export interface IRootRequire extends IRequire {
 
 			// if result defines load, just assume it's a plugin; harmless if the assumption is wrong
 			result && result.load && [ 'dynamic', 'normalize', 'load' ].forEach(function (key:string):void {
-				(<any> module)[key] = (<any> result)[key];
+				(<any>module)[key] = (<any>result)[key];
 			});
 
 			// for plugins, resolve the loadQ
@@ -743,7 +746,7 @@ export interface IRootRequire extends IRequire {
 				consumePendingCacheInsert(module);
 
 				if (has('loader-ie9-compat') && node) {
-					defArgs = (<any> node)['defArgs'];
+					defArgs = (<any>node).defArgs;
 				}
 
 				// non-amd module
@@ -962,9 +965,9 @@ export interface IRootRequire extends IRequire {
 		}
 
 		if (has('loader-ie9-compat')) {
-			for (var i = document.scripts.length - 1, script:Element; (script = document.scripts[i]); --i) {
-				if ((<any> script)['readyState'] === 'interactive') {
-					(<any> script)['defArgs'] = [ deps, factory ];
+			for (var i = document.scripts.length - 1, script:HTMLScriptElement; (script = <HTMLScriptElement>document.scripts[i]); --i) {
+				if (script.readyState === 'interactive') {
+					(<any>script).defArgs = [ deps, factory ];
 					break;
 				}
 			}

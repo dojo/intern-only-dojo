@@ -19,7 +19,7 @@ interface IDispatcher {
 var nextId = 0;
 
 function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArguments?:boolean):core.IHandle {
-	var previous = (<any> dispatcher)[type];
+	var previous = (<any>dispatcher)[type];
 	var advised = <IAdvised> {
 		id: nextId++,
 		advice: advice,
@@ -42,7 +42,7 @@ function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArg
 		}
 	}
 	else {
-		(<any> dispatcher)[type] = advised;
+		(<any>dispatcher)[type] = advised;
 	}
 
 	advice = previous = null;
@@ -55,14 +55,14 @@ function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArg
 			var next = advised.next;
 
 			if (!previous && !next) {
-				(<any> dispatcher)[type] = null;
+				(<any>dispatcher)[type] = null;
 			}
 			else {
 				if (previous) {
 					previous.next = next;
 				}
 				else {
-					(<any> dispatcher)[type] = next;
+					(<any>dispatcher)[type] = next;
 				}
 
 				if (next) {

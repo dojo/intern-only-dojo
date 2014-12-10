@@ -113,7 +113,7 @@ class Observable implements core.IObservable {
 
 		if (!this._callbacks[property]) {
 			var oldDescriptor = lang.getPropertyDescriptor(this, property),
-				currentValue:any = (<any> this)[property],
+				currentValue:any = (<any>this)[property],
 				descriptor:PropertyDescriptor = {
 					configurable: true,
 					enumerable: true

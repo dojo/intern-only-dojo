@@ -229,7 +229,7 @@ class DateObject implements core.IDateObject {
 				return;
 			}
 
-			(<any> result)[property] += (<any> value)[property];
+			(<any>result)[property] += (<any>value)[property];
 		});
 		return result;
 	}
