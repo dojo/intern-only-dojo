@@ -7,3 +7,4 @@ import ObservableProperty = require('./ObservableProperty'); ObservableProperty;
 import Promise = require('./Promise'); Promise;
 import nextTick = require('./nextTick'); nextTick;
 import string = require('./string'); string;
+import WeakMap = require('./WeakMap'); WeakMap;
