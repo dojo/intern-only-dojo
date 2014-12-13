@@ -4,7 +4,7 @@ import lang = require('./lang');
 
 has.add('es6-weak-map', typeof (<any> WeakMap) !== 'undefined');
 
-class WeakMapShim {
+class WeakMapPolyfill<K, V> {
 	private _name:string = undefined;
 	static length:number = 1;
 
@@ -34,7 +34,7 @@ class WeakMapShim {
 				writable: true
 			});
 		}
-		return value;
+		return this;
 	}
 
 	get(key:any):any {
@@ -56,7 +56,7 @@ var WM;
 
 if (!has('es6-weak-map')) {
 	var startId:number = Math.floor(Date.now() % 100000000);
-	WM = WeakMapShim;
+	WM = WeakMapPolyfill;
 }
 else {
 	WM = WeakMap;

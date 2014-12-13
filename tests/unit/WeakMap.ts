@@ -49,7 +49,7 @@ registerSuite({
 	'.set()': function () {
 		if (has('es6-weak-map')) this.skip('Native WeakMap');
 
-		assert(wm.set(obj1, 'baz'));
+		assert.strictEqual(wm.set(obj1, 'baz'), wm);
 
 		assert.strictEqual(Object.keys(obj1).length, 1);
 	},
