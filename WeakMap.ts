@@ -9,15 +9,14 @@ class WeakMapPolyfill<K, V> {
 	static length:number = 1;
 
 	constructor(iterable:any) {
-		var self = this;
-		self._name = '__wm' + lang.getUID() + (startId++ + '__');
+		this._name = '__wm' + lang.getUID() + (startId++ + '__');
 		if (iterable && 'forEach' in iterable) {
-			iterable.forEach(function (item, i) {
+			iterable.forEach((item, i) => {
 				if (Array.isArray(item) && item.length === 2) {
-					self.set(iterable[i][0], iterable[i][1]);
+					this.set(iterable[i][0], iterable[i][1]);
 				}
 				else {
-					self.set(iterable[i], i);
+					this.set(iterable[i], i);
 				}
 			});
 		}
