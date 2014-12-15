@@ -1,4 +1,3 @@
-import core = require('./interfaces');
 import has = require('./has');
 import lang = require('./lang');
 
