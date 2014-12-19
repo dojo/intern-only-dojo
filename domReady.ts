@@ -1,5 +1,5 @@
 import has = require('./has');
-import loader = require('./loader');
+import core = require('./interfaces');
 
 if (!has('host-browser')) {
 	throw new Error('dojo/domReady makes no sense to load in a non-browser environment');
@@ -37,7 +37,7 @@ if (!ready) {
 }
 
 /* tslint:disable:class-name */
-interface domReady extends loader.ILoaderPlugin {
+interface domReady extends core.ILoaderPlugin {
 /* tslint:enable:class-name */
 	(callback:() => void):void;
 }
@@ -49,7 +49,7 @@ var domReady = <domReady> function (callback:(...args:any[]) => void):void {
 	}
 };
 
-domReady.load = function (resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+domReady.load = function (resourceId:string, require:core.IRequire, load:(value?:any) => void):void {
 	domReady(load);
 };
 

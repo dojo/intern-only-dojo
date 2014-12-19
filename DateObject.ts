@@ -33,7 +33,10 @@ class DateObject implements core.IDateObject {
 		else if (value instanceof Date) {
 			_date = new Date(+value);
 		}
-		else if (typeof value === 'number' || typeof value === 'string') {
+		else if (typeof value === 'number') {
+			_date = new Date(value);
+		}
+		else if (typeof value === 'string') {
 			_date = new Date(value);
 		}
 		else {

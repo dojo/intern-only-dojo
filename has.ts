@@ -1,30 +1,22 @@
-import loader = require('./loader');
+import core = require('./interfaces');
 
 declare var process:any;
-declare var require:loader.IRootRequire;
+declare var require:core.IRootRequire;
 
 module has {
-	export interface IHas {
-		(name:string):any;
-		add(name:string, value:(global:Window, document?:HTMLDocument, element?:HTMLDivElement) => any, now?:boolean, force?:boolean):void;
-		add(name:string, value:any, now?:boolean, force?:boolean):void;
-	}
+	export interface IHas extends core.IHas {}
 }
 
-/* tslint:disable:class-name */
-interface has extends has.IHas, loader.ILoaderPlugin {}
-/* tslint:enable:class-name */
-
-var has:has = require.has;
+var has:core.has = require.has;
 
 if (!has) {
-	has = (function ():has {
+	has = (function ():core.has {
 		var hasCache:{ [name:string]:any; } = Object.create(null);
 		var global:Window = this;
 		var document:HTMLDocument = global.document;
 		var element:HTMLDivElement = document && document.createElement('div');
 
-		var has:has = <has> function(name:string):any {
+		var has:core.has = <core.has> function(name:string):any {
 			return typeof hasCache[name] === 'function' ? (hasCache[name] = hasCache[name](global, document, element)) : hasCache[name];
 		};
 
@@ -74,7 +66,7 @@ has.normalize = function (resourceId:string, normalize:(moduleId:string) => stri
 	return resourceId && normalize(resourceId);
 };
 
-has.load = function (resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+has.load = function (resourceId:string, require:core.IRequire, load:(value?:any) => void):void {
 	if (resourceId) {
 		require([ resourceId ], load);
 	}

@@ -1,6 +1,6 @@
 /// <reference path="./nodejs" />
 import has = require('./has');
-import loader = require('./loader');
+import core = require('./interfaces');
 
 var getText:(url:string, callback:(value:string) => void) => void;
 
@@ -34,6 +34,6 @@ else {
 	};
 }
 
-export function load(resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+export function load(resourceId:string, require:core.IRequire, load:(value?:any) => void):void {
 	getText(resourceId, load);
 }

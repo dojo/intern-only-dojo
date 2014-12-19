@@ -1,128 +1,13 @@
-import has = require('./has');
+import core = require('./interfaces');
 
 declare var process:any;
 declare var require:<ModuleType>(moduleId:string) => ModuleType;
 declare var module:{ exports:any; };
 
-export interface IConfig {
-	baseUrl?:string;
-	map?:IModuleMap;
-	packages?:IPackage[];
-	paths?:{ [path:string]:string; };
-}
-
-export interface IDefine {
-	(moduleId:string, dependencies:string[], factory:IFactory):void;
-	(dependencies:string[], factory:IFactory):void;
-	(factory:IFactory):void;
-	(value:any):void;
-}
-
-export interface IFactory {
-	(...modules:any[]):any;
-}
-
-export interface ILoaderPlugin {
-	dynamic?:boolean;
-	load?:(resourceId:string, require:IRequire, load:(value?:any) => void, config?:Object) => void;
-	normalize?:(moduleId:string, normalize:(moduleId:string) => string) => string;
-}
-
-export interface IMapItem extends Array<any> {
-	/* prefix */      0:string;
-	/* replacement */ 1:any;
-	/* regExp */      2:RegExp;
-	/* length */      3:number;
-}
-
-export interface IMapReplacement extends IMapItem {
-	/* replacement */ 1:string;
-}
-
-export interface IMapRoot extends Array<IMapSource> {
-	star?:IMapSource;
-}
-
-export interface IMapSource extends IMapItem {
-	/* replacement */ 1:IMapReplacement[];
-}
-
-export interface IModule extends ILoaderPlugin {
-	cjs:{
-		exports:any;
-		id:string;
-		setExports:(exports:any) => void;
-		uri:string;
-	};
-	def:IFactory;
-	deps:IModule[];
-	executed:any; // TODO: enum
-	injected:boolean;
-	fix?:(module:IModule) => void;
-	gc:boolean;
-	mid:string;
-	pack:IPackage;
-	req:IRequire;
-	require?:IRequire; // TODO: WTF?
-	result:any;
-	url:string;
-
-	// plugin interface
-	loadQ?:IModule[];
-	plugin?:IModule;
-	prid:string;
-}
-
-export interface IModuleMap extends IModuleMapItem {
-	[sourceMid:string]:IModuleMapReplacement;
-}
-
-export interface IModuleMapItem {
-	[mid:string]:/*IModuleMapReplacement|IModuleMap*/any;
-}
-
-export interface IModuleMapReplacement extends IModuleMapItem {
-	[findMid:string]:/* replaceMid */string;
-}
-
-export interface IPackage {
-	location?:string;
-	main?:string;
-	name?:string;
-}
-
-export interface IPackageMap {
-	[packageId:string]:IPackage;
-}
-
-export interface IPathMap extends IMapReplacement {}
-
-export interface IRequire {
-	(config:IConfig, dependencies?:string[], callback?:IRequireCallback):void;
-	(dependencies:string[], callback:IRequireCallback):void;
-	<ModuleType>(moduleId:string):ModuleType;
-
-	toAbsMid(moduleId:string):string;
-	toUrl(path:string):string;
-}
-
-export interface IRequireCallback {
-	(...modules:any[]):void;
-}
-
-export interface IRootRequire extends IRequire {
-	config(config:IConfig):void;
-	has:has;
-	inspect?:(name:string) => any;
-	nodeRequire?:typeof require;
-	signal:(type:string, data:any[]) => void;
-	undef:(moduleId:string) => void;
-}
-
 (function ():void {
-	var req:IRootRequire = <IRootRequire> function (config:any, dependencies?:any, callback?:IRequireCallback):void {
+	var req:core.IRootRequire = <core.IRootRequire> function (config:any, dependencies?:any, callback?:core.IRequireCallback):void {
 		if (/* require([], cb) */ Array.isArray(config) || /* require(mid) */ typeof config === 'string') {
-			callback = <IRequireCallback> dependencies;
+			callback = <core.IRequireCallback> dependencies;
 			dependencies = <string[]> config;
 			config = {};
 		}
@@ -134,13 +19,13 @@ export interface IRootRequire extends IRequire {
 		contextRequire(dependencies, callback);
 	};
 
-	var has:has = req.has = (function ():has {
+	var has:core.has = req.has = (function ():core.has {
 		var hasCache:{ [name:string]:any; } = Object.create(null);
 		var global:Window = this;
 		var document:HTMLDocument = global.document;
 		var element:HTMLDivElement = document && document.createElement('div');
 
-		var has:has = <has> function(name:string):any {
+		var has:core.has = <core.has> function(name:string):any {
 			return typeof hasCache[name] === 'function' ? (hasCache[name] = hasCache[name](global, document, element)) : hasCache[name];
 		};
 
@@ -169,12 +54,12 @@ export interface IRootRequire extends IRequire {
 		 * @param {{ ?baseUrl: string, ?map: Object, ?packages: Array.<({ name, ?location, ?main }|string)> }} config
 		 * The configuration data.
 		 */
-		var configure:(config:IConfig) => void = req.config = function (config:IConfig):void {
+		var configure:(config:core.IConfig) => void = req.config = function (config:core.IConfig):void {
 			// TODO: Expose all properties on req as getter/setters? Plugin modules like dojo/node being able to
 			// retrieve baseUrl is important. baseUrl is defined as a getter currently.
 			baseUrl = (config.baseUrl || baseUrl).replace(/\/*$/, '/');
 
-			forEach(config.packages, function (p:IPackage):void {
+			forEach(config.packages, function (p:core.IPackage):void {
 				// Allow shorthand package definition, where name and location are the same
 				if (typeof p === 'string') {
 					p = { name: <string> p, location: <string> p };
@@ -187,7 +72,7 @@ export interface IRootRequire extends IRequire {
 				packs[p.name] = p;
 			});
 
-			function computeMapProg(map:IModuleMapItem):IMapItem[] {
+			function computeMapProg(map:core.IModuleMapItem):core.IMapItem[] {
 				// This method takes a map as represented by a JavaScript object and initializes an array of
 				// arrays of (map-key, map-value, regex-for-map-key, length-of-map-key), sorted decreasing by length-
 				// of-map-key. The regex looks for the map-key followed by either "/" or end-of-string at the beginning
@@ -219,13 +104,13 @@ export interface IRootRequire extends IRequire {
 				//     original module id length
 				// ]
 
-				var result:IMapItem[] = [];
+				var result:core.IMapItem[] = [];
 
 				for (var moduleId in map) {
 					var value:any = (<any> map)[moduleId];
 					var valueIsMapReplacement:boolean = typeof value === 'object';
 
-					var item = <IMapItem> {
+					var item = <core.IMapItem> {
 						0: moduleId,
 						1: valueIsMapReplacement ? computeMapProg(value) : value,
 						2: new RegExp('^' + moduleId.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&') + '(?:\/|$)'),
@@ -234,7 +119,7 @@ export interface IRootRequire extends IRequire {
 					result.push(item);
 
 					if (valueIsMapReplacement && moduleId === '*') {
-						(<IMapRoot>result).star = item[1];
+						(<core.IMapRoot>result).star = item[1];
 					}
 				}
 
@@ -262,17 +147,17 @@ export interface IRootRequire extends IRequire {
 	var baseUrl:string = './';
 
 	// a map from pid to package configuration object
-	var packs:IPackageMap = {};
+	var packs:core.IPackageMap = {};
 
 	// list of (from-path, to-path, regex, length) derived from paths;
 	// a "program" to apply paths; see computeMapProg
-	var pathsMapProg:IPathMap[] = [];
+	var pathsMapProg:core.IPathMap[] = [];
 
 	// AMD map config variable
-	var map:IModuleMap = {};
+	var map:core.IModuleMap = {};
 
 	// array of quads as described by computeMapProg; map-key is AMD map key, map-value is AMD map value
-	var mapProgs:IMapRoot = [];
+	var mapProgs:core.IMapRoot = [];
 
 	// A hash:(mid) --> (module-object) the module namespace
 	//
@@ -299,7 +184,7 @@ export interface IRootRequire extends IRequire {
 	// 4. Defined: the resource contained a define statement that advised the loader about the module.
 	//
 	// 5. Evaluated: the module was defined via define and the loader has evaluated the factory and computed a result.
-	var modules:{ [moduleId:string]:IModule; } = {};
+	var modules:{ [moduleId:string]:core.IModule; } = {};
 
 	// hash:(mid | url)-->(function | string)
 	//
@@ -333,7 +218,7 @@ export interface IRootRequire extends IRequire {
 		req.signal.apply(req, arguments);
 	}
 
-	function consumePendingCacheInsert(referenceModule?:IModule):void {
+	function consumePendingCacheInsert(referenceModule?:core.IModule):void {
 		var item:any;
 
 		for (var key in pendingCacheInsert) {
@@ -347,10 +232,10 @@ export interface IRootRequire extends IRequire {
 
 	var uidGenerator:number = 0;
 
-	function contextRequire(moduleId:string, unused?:void, referenceModule?:IModule):IModule;
-	function contextRequire(dependencies:string[], callback:IRequireCallback, referenceModule?:IModule):IModule;
-	function contextRequire(a1:any, a2:any, referenceModule?:IModule):IModule {
-		var module:IModule;
+	function contextRequire(moduleId:string, unused?:void, referenceModule?:core.IModule):core.IModule;
+	function contextRequire(dependencies:string[], callback:core.IRequireCallback, referenceModule?:core.IModule):core.IModule;
+	function contextRequire(a1:any, a2:any, referenceModule?:core.IModule):core.IModule {
+		var module:core.IModule;
 		if (typeof a1 === 'string') {
 			module = getModule(a1, referenceModule);
 			if (module.executed !== true) {
@@ -379,10 +264,10 @@ export interface IRootRequire extends IRequire {
 		return module;
 	}
 
-	function createRequire(module:IModule):IRequire {
-		var result:IRequire = (!module && req) || module.require;
+	function createRequire(module:core.IModule):core.IRequire {
+		var result:core.IRequire = (!module && req) || module.require;
 		if (!result) {
-			module.require = result = <IRequire> function (a1:any, a2:any):IModule {
+			module.require = result = <core.IRequire> function (a1:any, a2:any):core.IModule {
 				return contextRequire(a1, a2, module);
 			};
 			mix(mix(result, req), {
@@ -398,7 +283,7 @@ export interface IRootRequire extends IRequire {
 	}
 
 	// The list of modules that need to be evaluated.
-	var execQ:IModule[] = [];
+	var execQ:core.IModule[] = [];
 
 	// The arguments sent to loader via AMD define().
 	var defArgs:any[] = null;
@@ -406,7 +291,7 @@ export interface IRootRequire extends IRequire {
 	// the number of modules the loader has injected but has not seen defined
 	var waitingCount:number = 0;
 
-	function runMapProg(targetMid:string, map:IMapItem[]):IMapSource {
+	function runMapProg(targetMid:string, map:core.IMapItem[]):core.IMapSource {
 		// search for targetMid in map; return the map item if found; falsy otherwise
 		if (map) {
 			for (var i = 0, j = map.length; i < j; ++i) {
@@ -439,14 +324,14 @@ export interface IRootRequire extends IRequire {
 		return result.join('/');
 	}
 
-	function getModuleInfo(mid:string, referenceModule?:IModule):IModule {
+	function getModuleInfo(mid:string, referenceModule?:core.IModule):core.IModule {
 		var match:string[];
 		var pid:string;
-		var pack:IPackage;
+		var pack:core.IPackage;
 		var midInPackage:string;
-		var mapItem:IMapItem;
+		var mapItem:core.IMapItem;
 		var url:string;
-		var result:IModule;
+		var result:core.IModule;
 
 		// relative module ids are relative to the referenceModule; get rid of any dots
 		mid = compactPath(/^\./.test(mid) && referenceModule ? (referenceModule.mid + '/../' + mid) : mid);
@@ -454,7 +339,7 @@ export interface IRootRequire extends IRequire {
 
 		// if there is a reference module, then use its module map, if one exists; otherwise, use the global map.
 		// see computeMapProg for more information on the structure of the map arrays
-		var moduleMap:IMapItem = referenceModule && runMapProg(referenceModule.mid, mapProgs);
+		var moduleMap:core.IMapItem = referenceModule && runMapProg(referenceModule.mid, mapProgs);
 		moduleMap = moduleMap ? moduleMap[1] : mapProgs.star;
 
 		if ((mapItem = runMapProg(mid, moduleMap))) {
@@ -475,7 +360,7 @@ export interface IRootRequire extends IRequire {
 		if (!(result = modules[mid])) {
 			mapItem = runMapProg(mid, pathsMapProg);
 			url = mapItem ? mapItem[1] + mid.slice(mapItem[3]) : (pid ? pack.location + midInPackage : mid);
-			result = <IModule> <any> {
+			result = <core.IModule> <any> {
 				pid: pid,
 				mid: mid,
 				pack: pack,
@@ -492,17 +377,17 @@ export interface IRootRequire extends IRequire {
 		return result;
 	}
 
-	function resolvePluginResourceId(plugin:IModule, prid:string, contextRequire:IRequire):string {
+	function resolvePluginResourceId(plugin:core.IModule, prid:string, contextRequire:core.IRequire):string {
 		return plugin.normalize ? plugin.normalize(prid, contextRequire.toAbsMid) : contextRequire.toAbsMid(prid);
 	}
 
-	function getModule(mid:string, referenceModule?:IModule):IModule {
+	function getModule(mid:string, referenceModule?:core.IModule):core.IModule {
 		// compute and construct (if necessary) the module implied by the mid with respect to referenceModule
 		var match:string[];
-		var plugin:IModule;
+		var plugin:core.IModule;
 		var prid:string;
-		var result:IModule;
-		var contextRequire:IRequire;
+		var result:core.IModule;
+		var contextRequire:core.IRequire;
 		var loaded:boolean;
 
 		match = mid.match(/^(.+?)\!(.*)$/);
@@ -522,7 +407,7 @@ export interface IRootRequire extends IRequire {
 				prid = match[2];
 				mid = plugin.mid + '!' + (++uidGenerator) + '!*';
 			}
-			result = <IModule> <any> {
+			result = <core.IModule> <any> {
 				plugin: plugin,
 				mid: mid,
 				req: contextRequire,
@@ -536,21 +421,21 @@ export interface IRootRequire extends IRequire {
 		return modules[result.mid] || (modules[result.mid] = result);
 	}
 
-	function toAbsMid(mid:string, referenceModule:IModule):string {
+	function toAbsMid(mid:string, referenceModule:core.IModule):string {
 		return getModuleInfo(mid, referenceModule).mid;
 	}
 
-	function toUrl(name:string, referenceModule:IModule):string {
-		var moduleInfo:IModule = getModuleInfo(name + '/x', referenceModule);
+	function toUrl(name:string, referenceModule:core.IModule):string {
+		var moduleInfo:core.IModule = getModuleInfo(name + '/x', referenceModule);
 		var url:string = moduleInfo.url;
 
 		// "/x.js" since getModuleInfo automatically appends ".js" and we appended "/x" to make name look like a module id
 		return url.slice(0, url.length - 5);
 	}
 
-	function makeCjs(mid:string):IModule {
-		// TODO: Intentional incomplete coercion to IModule might be a bad idea
-		var module:IModule = modules[mid] = <IModule> <any> {
+	function makeCjs(mid:string):core.IModule {
+		// TODO: Intentional incomplete coercion to core.IModule might be a bad idea
+		var module:core.IModule = modules[mid] = <core.IModule> <any> {
 			mid: mid,
 			injected: true,
 			executed: true
@@ -559,9 +444,9 @@ export interface IRootRequire extends IRequire {
 		return module;
 	}
 
-	var cjsRequireModule:IModule = makeCjs('require');
-	var cjsExportsModule:IModule = makeCjs('exports');
-	var cjsModuleModule:IModule = makeCjs('module');
+	var cjsRequireModule:core.IModule = makeCjs('require');
+	var cjsExportsModule:core.IModule = makeCjs('exports');
+	var cjsModuleModule:core.IModule = makeCjs('module');
 
 	var EXECUTING:string = 'executing';
 	var abortExec:Object = {};
@@ -572,7 +457,7 @@ export interface IRootRequire extends IRequire {
 		var circularTrace:string[] = [];
 	}
 
-	function execModule(module:IModule):any {
+	function execModule(module:core.IModule):any {
 		// run the dependency array, then run the factory for module
 		if (module.executed === EXECUTING) {
 			// for circular dependencies, assume the first module encountered was executed OK
@@ -595,15 +480,15 @@ export interface IRootRequire extends IRequire {
 				return abortExec;
 			}
 
-			var deps:IModule[] = module.deps;
-			var factory:IFactory = module.def;
+			var deps:core.IModule[] = module.deps;
+			var factory:core.IFactory = module.def;
 			var result:any;
 			var args:any[];
 
 			has('loader-debug-circular-dependencies') && circularTrace.push(module.mid);
 
 			module.executed = EXECUTING;
-			args = deps.map(function (dep:IModule):any {
+			args = deps.map(function (dep:core.IModule):any {
 				if (result !== abortExec) {
 					result = ((dep === cjsRequireModule) ? createRequire(module) :
 								((dep === cjsExportsModule) ? module.cjs.exports :
@@ -639,11 +524,11 @@ export interface IRootRequire extends IRequire {
 			});
 
 			// for plugins, resolve the loadQ
-			forEach(module.loadQ, function (pseudoPluginResource:IModule):void {
+			forEach(module.loadQ, function (pseudoPluginResource:core.IModule):void {
 				// manufacture and insert the real module in modules
 				var prid:string = resolvePluginResourceId(module, pseudoPluginResource.prid, pseudoPluginResource.req);
 				var mid:string = module.dynamic ? pseudoPluginResource.mid.replace(/\*$/, prid) : (module.mid + '!' + prid);
-				var pluginResource:IModule = <IModule> mix(mix({}, pseudoPluginResource), { mid: mid, prid: prid });
+				var pluginResource:core.IModule = <core.IModule> mix(mix({}, pseudoPluginResource), { mid: mid, prid: prid });
 
 				if (!modules[mid]) {
 					// create a new (the real) plugin resource and inject it normally now that the plugin is on board
@@ -680,7 +565,7 @@ export interface IRootRequire extends IRequire {
 		// keep going through the execQ as long as at least one factory is executed
 		// plugins, recursion, cached modules all make for many execution path possibilities
 		!checkCompleteGuard && guardCheckComplete(function ():void {
-			for (var module:IModule, i = 0; i < execQ.length; ) {
+			for (var module:core.IModule, i = 0; i < execQ.length; ) {
 				module = execQ[i];
 				if (module.executed === true) {
 					execQ.splice(i, 1);
@@ -702,9 +587,9 @@ export interface IRootRequire extends IRequire {
 		});
 	}
 
-	function injectPlugin(module:IModule):void {
+	function injectPlugin(module:core.IModule):void {
 		// injects the plugin module given by module; may have to inject the plugin itself
-		var plugin:IModule = module.plugin;
+		var plugin:core.IModule = module.plugin;
 		var onLoad = function (def:any):void {
 				module.result = def;
 				--waitingCount;
@@ -729,7 +614,7 @@ export interface IRootRequire extends IRequire {
 		}
 	}
 
-	function injectModule(parent:IModule, module:IModule):void {
+	function injectModule(parent:core.IModule, module:core.IModule):void {
 		// TODO: This is for debugging, we should bracket it
 		if (!module) {
 			module = parent;
@@ -740,7 +625,7 @@ export interface IRootRequire extends IRequire {
 			injectPlugin(module);
 		}
 		else if (!module.injected) {
-			var cached:IFactory;
+			var cached:core.IFactory;
 			var onLoadCallback = function (node?:HTMLScriptElement):void {
 				// defArgs is an array of [dependencies, factory]
 				consumePendingCacheInsert(module);
@@ -781,12 +666,12 @@ export interface IRootRequire extends IRequire {
 		}
 	}
 
-	function resolveDeps(deps:string[], module:IModule, referenceModule:IModule):IModule[] {
+	function resolveDeps(deps:string[], module:core.IModule, referenceModule:core.IModule):core.IModule[] {
 		// resolve deps with respect to this module
-		return deps.map(function (dep:string, i:number):IModule {
-			var result:IModule = getModule(dep, referenceModule);
+		return deps.map(function (dep:string, i:number):core.IModule {
+			var result:core.IModule = getModule(dep, referenceModule);
 			if (result.fix) {
-				result.fix = function (m:IModule):void {
+				result.fix = function (m:core.IModule):void {
 					module.deps[i] = m;
 				};
 			}
@@ -794,9 +679,9 @@ export interface IRootRequire extends IRequire {
 		});
 	}
 
-	function defineModule(module:IModule, deps:string[], def:IFactory):IModule {
+	function defineModule(module:core.IModule, deps:string[], def:core.IFactory):core.IModule {
 		--waitingCount;
-		return <IModule> mix(module, {
+		return <core.IModule> mix(module, {
 			def: def,
 			deps: resolveDeps(deps, module, module),
 			cjs: {
@@ -823,10 +708,10 @@ export interface IRootRequire extends IRequire {
 		};
 	}
 
-	var setGlobals:(require:IRequire, define:IDefine) => void;
-	var injectUrl:(url:string, callback:(node?:HTMLScriptElement) => void, module:IModule, parent?:IModule) => void;
+	var setGlobals:(require:core.IRequire, define:core.IDefine) => void;
+	var injectUrl:(url:string, callback:(node?:HTMLScriptElement) => void, module:core.IModule, parent?:core.IModule) => void;
 	if (has('host-browser')) {
-		injectUrl = function (url:string, callback:(node?:HTMLScriptElement) => void, module:IModule, parent?:IModule):void {
+		injectUrl = function (url:string, callback:(node?:HTMLScriptElement) => void, module:core.IModule, parent?:core.IModule):void {
 			// insert a script element to the insert-point element with src=url;
 			// apply callback upon detecting the script has loaded.
 			var node:HTMLScriptElement = document.createElement('script');
@@ -849,7 +734,7 @@ export interface IRootRequire extends IRequire {
 			document.head.appendChild(node);
 		};
 
-		setGlobals = function (require:IRequire, define:IDefine):void {
+		setGlobals = function (require:core.IRequire, define:core.IDefine):void {
 			this.require = require;
 			this.define = define;
 		};
@@ -860,7 +745,7 @@ export interface IRootRequire extends IRequire {
 
 		// retain the ability to get node's require
 		req.nodeRequire = require;
-		injectUrl = function (url:string, callback:(node?:HTMLScriptElement) => void, module:IModule, parent?:IModule):void {
+		injectUrl = function (url:string, callback:(node?:HTMLScriptElement) => void, module:core.IModule, parent?:core.IModule):void {
 			fs.readFile(url, 'utf8', function (error:Error, data:string):void {
 				if (error) {
 					console.log(module, parent);
@@ -872,7 +757,7 @@ export interface IRootRequire extends IRequire {
 			});
 		};
 
-		setGlobals = function (require:IRequire, define:IDefine):void {
+		setGlobals = function (require:core.IRequire, define:core.IDefine):void {
 			module.exports = this.require = require;
 			this.define = define;
 		};
@@ -930,13 +815,13 @@ export interface IRootRequire extends IRequire {
 	 * @param deps //(array of commonjs.moduleId, optional)
 	 * @param factory //(any)
 	 */
-	var define:IDefine = <IDefine> mix(function (deps:string[], factory:IFactory):void {
+	var define:core.IDefine = <core.IDefine> mix(function (deps:string[], factory:core.IFactory):void {
 		if (has('loader-explicit-mid') && arguments.length === 3) {
 			var id:string = <any> deps;
 			deps = <any> factory;
 			factory = arguments[2];
 
-			var module:IModule = getModule(id);
+			var module:core.IModule = getModule(id);
 			module.injected = true;
 			defineModule(module, deps, factory);
 		}
