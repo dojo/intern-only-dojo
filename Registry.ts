@@ -44,7 +44,7 @@ class Registry<ValueT> {
 			value: value
 		};
 
-		entries[first ? 'unshift' : 'push'](entry);
+		(<any>entries)[first ? 'unshift' : 'push'](entry);
 
 		return {
 			remove: function ():void {

@@ -101,11 +101,10 @@ class Promise<T> {
 	 *   value.bar === 'bar'; // true
 	 * });
 	 */
-	static all<T>(iterable:{ [key:string]:Promise<T>; }):Promise<{ [key:string]:T; }>;
-	static all<T>(iterable:Promise<T>[]):Promise<T[]>;
+	static all<T>(iterable:{ [key:string]:any; }):Promise<{ [key:string]:T; }>;
+	static all<T>(iterable:any[]):Promise<T[]>;
 	static all(iterable:any):Promise<any> {
-		// explicit typing fixes tsc 1.0.1 crash on `new this`
-		return new (<typeof Promise> this)(function (
+		return new this(function (
 			resolve:(value:any) => void,
 			reject:(error:Error) => void,
 			progress:(data:any) => void,

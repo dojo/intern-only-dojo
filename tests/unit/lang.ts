@@ -20,7 +20,7 @@ interface IProps {
 
 interface ISpy {
 	(...args:any[]):any;
-	args:any[];
+	args:IArguments;
 }
 
 interface ISubObject {

@@ -21,12 +21,12 @@
  *
  *     | "blah=blah&multi=thud&multi=thonk"
  */
-export function objectToQuery(map:Object):string {
-	var query = [];
-	var value;
+export function objectToQuery(map:{}):string {
+	var query:string[] = [];
+	var value:any;
 
 	for (var key in map) {
-		value = map[key];
+		value = (<any>map)[key];
 
 		key = encodeURIComponent(key);
 
