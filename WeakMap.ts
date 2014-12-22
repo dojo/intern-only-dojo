@@ -10,7 +10,7 @@ class WeakMapPolyfill<K, V> {
 	constructor(iterable:any) {
 		this._name = '__wm' + lang.getUID() + (startId++ + '__');
 		if (iterable && 'forEach' in iterable) {
-			iterable.forEach((item, i) => {
+			iterable.forEach((item:any, i:number) => {
 				if (Array.isArray(item) && item.length === 2) {
 					this.set(iterable[i][0], iterable[i][1]);
 				}
@@ -50,7 +50,7 @@ class WeakMapPolyfill<K, V> {
 	}
 }
 
-var WM;
+var WM:any;
 
 if (!has('es6-weak-map')) {
 	var startId:number = Math.floor(Date.now() % 100000000);
