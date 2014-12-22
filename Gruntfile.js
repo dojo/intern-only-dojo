@@ -16,7 +16,8 @@ module.exports = function (grunt) {
 			},
 
 			default: {
-				src: [ '**/*.ts', '!**/*.d.ts', '!tests/**/*.ts', '!node_modules/**/*.ts' ]
+				src: [ '**/*.ts', '!**/*.d.ts', '!tests/**/*.ts', '!node_modules/**/*.ts' ],
+				watch: '.'
 			},
 
 			tests: {
@@ -48,5 +49,7 @@ module.exports = function (grunt) {
 		grunt.task.run('ts:default', 'ts:tests');
 	});
 
-	grunt.registerTask('default', [ 'build', 'test' ]);
+	grunt.registerTask('default', [ 'ts:default' ]);
+
+	grunt.registerTask('ci', [ 'ts:tests', 'test' ]);
 };

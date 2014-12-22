@@ -6,4 +6,4 @@ install:
   - "travis_retry npm install grunt-cli"
   - "travis_retry npm install"
 script:
-  - "grunt"
+  - "grunt ci"

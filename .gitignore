@@ -1,4 +1,5 @@
 .sublimets
+.tscache
 *.js
 *.js.map
 node_modules
