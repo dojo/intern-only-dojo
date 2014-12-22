@@ -7,10 +7,12 @@ module.exports = function (grunt) {
 	grunt.initConfig({
 		ts: {
 			options: {
-				target: 'es5',
+				failOnTypeErrors: true,
+				fast: process.env.CONTINUOUS_INTEGRATION ? 'never' : 'watch',
 				module: 'commonjs',
+				noImplicitAny: true,
 				sourceMap: true,
-				noImplicitAny: true
+				target: 'es5'
 			},
 
 			default: {
@@ -36,7 +38,9 @@ module.exports = function (grunt) {
 	});
 
 	grunt.registerTask('test', [ 'intern:client' ]);
+
 	grunt.registerTask('build', function (moduleType) {
+		// Use `build:<moduleType>` to build Dojo 2 core using a different module type than the default
 		if (moduleType) {
 			grunt.config.set('ts.default.module', moduleType);
 		}
