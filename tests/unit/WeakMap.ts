@@ -6,7 +6,7 @@ import has = require('../../has');
 import WeakMap = require('../../WeakMap');
 import registerSuite = require('intern!object');
 
-var wm,
+var wm:any,
 	obj1 = { foo: 'bar' },
 	obj2 = { baz: 'qat' },
 	obj3 = { qat: 'foo' },
