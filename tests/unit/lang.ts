@@ -203,7 +203,7 @@ registerSuite({
 
 	'.partial': function () {
 		var f = <ISpy>function () {
-			f.args = arguments;
+			f.args = Array.prototype.slice.call(arguments);
 		};
 
 		var partial1 = lang.partial<(a:string, b:string) => void>(f, 'foo');

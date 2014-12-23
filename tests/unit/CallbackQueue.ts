@@ -99,7 +99,7 @@ registerSuite({
 
 	'arguments': function () {
 		var one:ISpy = <any>function () {
-			one.args = arguments;
+			one.args = Array.prototype.slice.call(arguments);
 			one.called = true;
 		};
 
