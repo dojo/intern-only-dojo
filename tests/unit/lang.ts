@@ -20,7 +20,7 @@ interface IProps {
 
 interface ISpy {
 	(...args:any[]):any;
-	args:IArguments;
+	args:any;
 }
 
 interface ISubObject {
@@ -202,18 +202,21 @@ registerSuite({
 	},
 
 	'.partial': function () {
-		var f = <ISpy>function () {
-			f.args = arguments;
+        var f = <ISpy>function () {
+            f.args = {};
+            for (var i in arguments) {
+                f.args[i] = arguments[i];
+            }
 		};
 
 		var partial1 = lang.partial<(a:string, b:string) => void>(f, 'foo');
 
 		partial1('bar', 'baz');
-		assert.deepEqual(f.args, [ 'foo', 'bar', 'baz' ]);
+        assert.deepEqual(f.args, { 0: 'foo', 1: 'bar', 2: 'baz' });
 
 		var partial2 = lang.partial<(a:string) => void>(f, 'foo', 'bar');
 		partial2('baz');
-		assert.deepEqual(f.args, [ 'foo', 'bar', 'baz' ]);
+        assert.deepEqual(f.args, { 0: 'foo', 1: 'bar', 2: 'baz' });
 	},
 
 	'.deepMixin': function () {

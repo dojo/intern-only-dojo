@@ -32,7 +32,7 @@ registerSuite({
 		assert.instanceOf(observable, Array);
 		assert.instanceOf(observable, ObservableArray);
 		assert.strictEqual(observable.length, 5);
-		assert.deepEqual(observable, array);
+        assert.deepEqual(observable, { 0: array[0], 1: array[1], 2: array[2], 4: array[4] });
 	},
 
 	'#concat': function () {
@@ -40,7 +40,7 @@ registerSuite({
 			observable2 = observable1.concat(ObservableArray.from([4, 5, 6]), ObservableArray.from([7, 8, 9]));
 
 		assert.instanceOf(observable2, ObservableArray);
-		assert.deepEqual(observable2, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        assert.deepEqual(observable2, {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9 });
 	},
 
 	'#every': function () {
@@ -61,7 +61,7 @@ registerSuite({
 			});
 
 		assert.instanceOf(filtered, ObservableArray);
-		assert.deepEqual(filtered, [2, 3]);
+        assert.deepEqual(filtered, { 0: 2, 1: 3 });
 	},
 
 	'#indexOf': function () {
@@ -97,7 +97,7 @@ registerSuite({
 			});
 
 		assert.instanceOf(mapped, ObservableArray);
-		assert.deepEqual(mapped, ['foo1', 'foo2', 'foo3']);
+        assert.deepEqual(mapped, { 0: 'foo1', 1: 'foo2', 2: 'foo3' });
 	},
 
 	'#pop': function () {
@@ -111,7 +111,7 @@ registerSuite({
 		var observable = ObservableArray.from([1, 2, 3]);
 
 		assert.strictEqual(observable.push(4, 5, 6), 6);
-		assert.deepEqual(observable, [1, 2, 3, 4, 5, 6]);
+        assert.deepEqual(observable, { 0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6 });
 	},
 
 	'#reduce': function () {
@@ -125,7 +125,7 @@ registerSuite({
 
 		observable.reverse();
 
-		assert.deepEqual(observable, [3, 2, 1]);
+        assert.deepEqual(observable, { 0: 3, 1: 2, 2: 1 });
 	},
 
 	'#shift': function () {
@@ -139,12 +139,12 @@ registerSuite({
 		var observable = ObservableArray.from([1, 2, 3]);
 
 		assert.instanceOf(observable.slice(0, 2), ObservableArray);
-		assert.deepEqual(observable.slice(0), [1, 2, 3]);
-		assert.deepEqual(observable.slice(0, 2), [1, 2]);
-		assert.deepEqual(observable.slice(0, 4), [1, 2, 3]);
-		assert.deepEqual(observable.slice(2), [3]);
-		assert.deepEqual(observable.slice(2, 4), [3]);
-		assert.deepEqual(observable.slice(1, 3), [2, 3]);
+        assert.deepEqual(observable.slice(0), { 0: 1, 1: 2, 2: 3 });
+        assert.deepEqual(observable.slice(0, 2), { 0: 1, 1: 2 });
+        assert.deepEqual(observable.slice(0, 4), { 0: 1, 1: 2, 2: 3 });
+        assert.deepEqual(observable.slice(2), { 0: 3 });
+        assert.deepEqual(observable.slice(2, 4), { 0: 3 });
+        assert.deepEqual(observable.slice(1, 3), { 0: 2, 1: 3 });
 	},
 
 	'#some': function () {
@@ -171,7 +171,7 @@ registerSuite({
 			return 0;
 		});
 
-		assert.deepEqual(observable, [0, 1, 4, 7, 10, 12, 32]);
+        assert.deepEqual(observable, {0: 0, 1: 1, 2: 4, 3: 7, 4: 10, 5: 12, 6: 32 });
 	},
 
 	'#splice': function () {
@@ -180,14 +180,14 @@ registerSuite({
 		var removals = observable.splice(1, 1, 4, 5, 6);
 
 		assert.instanceOf(removals, ObservableArray);
-		assert.deepEqual(observable, [1, 4, 5, 6, 3]);
-		assert.deepEqual(removals, [2]);
+        assert.deepEqual(observable, { 0: 1, 1: 4, 2: 5, 3: 6, 4: 3 });
+        assert.deepEqual(removals, { 0: 2 });
 	},
 
 	'#unshift': function () {
 		var observable = ObservableArray.from([1, 2, 3]);
 
 		assert.strictEqual(observable.unshift(4, 5, 6), 6);
-		assert.deepEqual(observable, [4, 5, 6, 1, 2, 3]);
+        assert.deepEqual(observable, { 0: 4, 1: 5, 2: 6, 3: 1, 4: 2, 5: 3 });
 	}
 });
