@@ -17,8 +17,10 @@ if (has('host-browser')) {
 	};
 }
 else if (has('host-node')) {
-	var fs = require('fs');
+	var req:core.IRootRequire = (<any>require);
+	var fs:any = req.nodeRequire('fs');
 	getText = function (url:string, callback:(value:string) => void):void {
+		url = req.toUrl(url);
 		fs.readFile(url, { encoding: 'utf8' }, function (error:Error, data:string):void {
 			if (error) {
 				throw error;
