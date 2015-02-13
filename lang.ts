@@ -93,14 +93,19 @@ export function deepMixin(target:any, source:any):any {
 		if (Array.isArray(source)) {
 			(<any> target).length = source.length;
 		}
+
 		for (var name in source) {
 			var targetValue:any = target[name];
 			var sourceValue:any = source[name];
 
 			if (targetValue !== sourceValue) {
-				if (sourceValue && typeof sourceValue === 'object') {
+				if (sourceValue && typeof sourceValue === 'object' &&
+					!(sourceValue instanceof RegExp) &&
+					!(sourceValue instanceof Number) &&
+					!(sourceValue instanceof Boolean) &&
+					!(sourceValue instanceof Date)) {
 					if (!targetValue || typeof targetValue !== 'object') {
-						target[name] = targetValue = {};
+						target[name] = targetValue = Array.isArray(sourceValue) ? [] : {};
 					}
 					deepMixin(targetValue, sourceValue);
 				}
@@ -110,6 +115,7 @@ export function deepMixin(target:any, source:any):any {
 			}
 		}
 	}
+
 	return target;
 }
 
