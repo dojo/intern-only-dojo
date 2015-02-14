@@ -138,7 +138,7 @@ class Promise<T> {
 			function processItem(key:string, value:any):void {
 				++total;
 				if (isPromise(value)) {
-					value.then(fulfill.bind(null, key), fulfill.bind(null, key));
+					value.then(fulfill.bind(null, key), reject.bind(null));
 				}
 				else {
 					fulfill(key, value);
