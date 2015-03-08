@@ -1,61 +1,15 @@
 import nextTick = require('./nextTick');
 
-function isPromise(value:any):boolean {
+type Callback = (...args: any[]) => void;
+
+function isPromise(value: any): boolean {
 	return value && typeof value.then === 'function';
 }
 
-function runCallbacks(callbacks:Array<(...args:any[]) => void>, ...args:any[]):void {
-	for (var i = 0, callback:(...args:any[]) => void; callback = callbacks[i]; ++i) {
+function runCallbacks(callbacks: Array<Callback>, ...args: any[]): void {
+	for (var i = 0, callback: Callback; callback = callbacks[i]; ++i) {
 		callback.apply(null, args);
 	}
-}
-
-/**
- * The Deferred class unwraps a promise in order to expose its internal state management functions.
- */
-class Deferred<T> {
-	/**
-	 * The underlying promise for the Deferred.
-	 */
-	promise:Promise<T>;
-
-	constructor(canceler?:Promise.ICanceler) {
-		this.promise = new Promise<T>((
-			resolve:(value?:T) => void,
-			reject:(error?:Error) => void,
-			progress:(data?:any) => void,
-			setCanceler:(canceler:Promise.ICanceler) => void
-		):void => {
-			this.progress = progress;
-			this.reject = reject;
-			this.resolve = resolve;
-			canceler && setCanceler(canceler);
-		});
-	}
-
-	/**
-	 * Sends progress information for the underlying promise.
-	 *
-	 * @method
-	 * @param data Additional information about the asynchronous operation’s progress.
-	 */
-	progress:(data?:any) => void;
-
-	/**
-	 * Rejects the underlying promise with an error.
-	 *
-	 * @method
-	 * @param error The error that should be used as the fulfilled value for the promise.
-	 */
-	reject:(error?:Error) => void;
-
-	/**
-	 * Resolves the underlying promise with a value.
-	 *
-	 * @method
-	 * @param value The value that should be used as the fulfilled value for the promise.
-	 */
-	resolve:(value?:T) => void;
 }
 
 /**
@@ -101,17 +55,12 @@ class Promise<T> {
 	 *   value.bar === 'bar'; // true
 	 * });
 	 */
-	static all<T>(iterable:{ [key:string]:any; }):Promise<{ [key:string]:T; }>;
-	static all<T>(iterable:any[]):Promise<T[]>;
-	static all(iterable:any):Promise<any> {
-		return new this(function (
-			resolve:(value:any) => void,
-			reject:(error:Error) => void,
-			progress:(data:any) => void,
-			setCanceler:(canceler:(reason:Error) => any) => void
-		):void {
-			setCanceler(function (reason:Error):void {
-				walkIterable(function (key:string, value:any):void {
+	static all<T>(iterable: { [key: string]: Promise.Thenable<T> | T; }): Promise<{ [key: string]: T; }>;
+	static all<T>(iterable: Array<Promise.Thenable<T> | T>): Promise<T[]>;
+	static all(iterable: any): Promise<any> {
+		return new this(function (resolve, reject, progress, setCanceler) {
+			setCanceler(function (reason: Error) {
+				walkIterable(function (key: string, value: any) {
 					if (value && value.cancel) {
 						value.cancel(reason);
 					}
@@ -120,14 +69,14 @@ class Promise<T> {
 				return values;
 			});
 
-			function fulfill(key:string, value:any):void {
+			function fulfill(key: string, value: any) {
 				values[key] = value;
 				progress(values);
 				++complete;
 				finish();
 			}
 
-			function finish():void {
+			function finish() {
 				if (populating || complete < total) {
 					return;
 				}
@@ -135,7 +84,7 @@ class Promise<T> {
 				resolve(values);
 			}
 
-			function processItem(key:string, value:any):void {
+			function processItem(key: string, value: any) {
 				++total;
 				if (isPromise(value)) {
 					value.then(fulfill.bind(null, key), fulfill.bind(null, key));
@@ -145,7 +94,7 @@ class Promise<T> {
 				}
 			}
 
-			function walkIterable(callback:(key:string, value:any) => void):void {
+			function walkIterable(callback: (key: string, value: any) => void) {
 				if (Array.isArray(iterable)) {
 					for (var i = 0, j = iterable.length; i < j; ++i) {
 						if (i in iterable) {
@@ -160,11 +109,11 @@ class Promise<T> {
 				}
 			}
 
-			var values:any = Array.isArray(iterable) ? [] : {};
-			var complete:number = 0;
-			var total:number = 0;
+			var values: any = Array.isArray(iterable) ? [] : {};
+			var complete = 0;
+			var total = 0;
 
-			var populating:boolean = true;
+			var populating = true;
 			walkIterable(processItem);
 			populating = false;
 			finish();
@@ -174,8 +123,8 @@ class Promise<T> {
 	/**
 	 * Creates a new promise that is pre-rejected with the given error.
 	 */
-	static reject<T>(error?:Error):Promise<T> {
-		return new this(function (resolve:(value:T) => void, reject:(error:Error) => void):void {
+	static reject(error?: Error): Promise<any> {
+		return new this<any>(function (resolve, reject) {
 			reject(error);
 		});
 	}
@@ -184,14 +133,12 @@ class Promise<T> {
 	 * Creates a new promise that is pre-resolved with the given value. If the passed value is already a promise, it
 	 * will be returned as-is.
 	 */
-	static resolve<T>(value:Promise<T>):Promise<T>;
-	static resolve<T>(value:T):Promise<T>;
-	static resolve<T>(value:any):Promise<T> {
+	static resolve<T>(value: Promise.Thenable<T> | T): Promise<T> {
 		if (value instanceof Promise) {
 			return value;
 		}
 
-		return new this(function (resolve:(value:T) => void):void {
+		return new this<T>(function (resolve) {
 			resolve(value);
 		});
 	}
@@ -215,19 +162,19 @@ class Promise<T> {
 	 * the canceler function to the `setCanceler` function.
 	 */
 	constructor(
-		initializer:(
-			resolve?:(value?:T) => void,
-			reject?:(error?:Error) => void,
-			progress?:(data?:any) => void,
-			setCanceler?:(canceler:Promise.ICanceler) => void
+		initializer: (
+			resolve?: (value?: Promise.Thenable<T> | T) => void,
+			reject?: (error?: Error) => void,
+			progress?: (data?: any) => void,
+			setCanceler?: (canceler: Promise.Canceler) => void
 		) => void
 	) {
 		/**
 		 * The current state of this promise.
 		 */
-		var state:Promise.State = Promise.State.PENDING;
+		var state: Promise.State = Promise.State.PENDING;
 		Object.defineProperty(this, 'state', {
-			get: function ():Promise.State {
+			get: function () {
 				return state;
 			}
 		});
@@ -235,42 +182,40 @@ class Promise<T> {
 		/**
 		 * Whether or not this promise is in a resolved state.
 		 */
-		function isResolved():boolean {
+		function isResolved(): boolean {
 			return state !== Promise.State.PENDING || isChained;
 		}
 
 		/**
 		 * If true, the resolution of this promise is chained to another promise.
 		 */
-		var isChained:boolean = false;
+		var isChained: boolean = false;
 
 		/**
 		 * The resolved value for this promise.
-		 *
-		 * @type {T|Error}
 		 */
-		var resolvedValue:any;
+		var resolvedValue: T | Error;
 
 		/**
 		 * Callbacks that should be invoked once the asynchronous operation has completed.
 		 */
-		var callbacks:Array<() => void> = [];
-		var whenFinished = function (callback:() => void):void {
+		var callbacks: Array<() => void> = [];
+		var whenFinished = function (callback: () => void) {
 			callbacks.push(callback);
 		};
 
 		/**
 		 * Callbacks that should be invoked when the asynchronous operation has progressed.
 		 */
-		var progressCallbacks:Array<(data?:any) => void> = [];
-		var whenProgress = function (callback:(data?:any) => void):void {
+		var progressCallbacks: Array<(data?: any) => void> = [];
+		var whenProgress = function (callback: (data?: any) => void) {
 			progressCallbacks.push(callback);
 		};
 
 		/**
 		 * A canceler function that will be used to cancel resolution of this promise.
 		 */
-		var canceler:Promise.ICanceler;
+		var canceler: Promise.Canceler;
 
 		/**
 		 * Queues a callback for execution during the next round through the event loop, in a way such that if a
@@ -281,13 +226,13 @@ class Promise<T> {
 		 * @method
 		 * @param callback The callback to execute on the next turn through the event loop.
 		 */
-		var enqueue:(callback:(...args:any[]) => any) => void = (function () {
-			function originalSchedule():void {
-				schedule = function ():void {};
+		var enqueue = (function () {
+			function originalSchedule() {
+				schedule = function () {};
 
-				nextTick(function run():void {
+				nextTick(function run() {
 					try {
-						var callback:(...args:any[]) => void;
+						var callback: Callback;
 						while ((callback = queue.shift())) {
 							callback();
 						}
@@ -305,10 +250,10 @@ class Promise<T> {
 				});
 			}
 
-			var queue:Array<(...args:any[]) => void> = [];
+			var queue: Array<Callback> = [];
 			var schedule = originalSchedule;
 
-			return function (callback:(...args:any[]) => void):void {
+			return function (callback: Callback) {
 				queue.push(callback);
 				schedule();
 			};
@@ -320,7 +265,7 @@ class Promise<T> {
 		 * @param newState The resolved state for this promise.
 		 * @param {T|Error} value The resolved value for this promise.
 		 */
-		var resolve = function (newState:Promise.State, value:any):void {
+		var resolve = function (newState: Promise.State, value: any) {
 			if (isResolved()) {
 				return;
 			}
@@ -349,18 +294,18 @@ class Promise<T> {
 		 * @param newState The resolved state for this promise.
 		 * @param {T|Error} value The resolved value for this promise.
 		 */
-		function settle(newState:Promise.State, value:any):void {
+		function settle(newState: Promise.State, value: any) {
 			state = newState;
 			resolvedValue = value;
 			whenFinished = enqueue;
-			whenProgress = function ():void {};
-			enqueue(function ():void {
+			whenProgress = function () {};
+			enqueue(function () {
 				runCallbacks(callbacks);
 				callbacks = progressCallbacks = null;
 			});
 		}
 
-		this.cancel = function (reason?:Error):void {
+		this.cancel = function (reason) {
 			if (isResolved() || !canceler) {
 				return;
 			}
@@ -379,17 +324,12 @@ class Promise<T> {
 		};
 
 		this.then = function <U>(
-			onFulfilled?:(value?:T) => U,
-			onRejected?:(error?:Error) => U,
-			onProgress?:(data?:any) => any
-		):Promise<U> {
-			return new Promise<U>(function (
-				resolve:(value?:U) => void,
-				reject:(error?:Error) => void,
-				progress:(data?:any) => void,
-				setCanceler:(canceler:Promise.ICanceler) => void
-			):void {
-				setCanceler(function (reason:Error):void {
+			onFulfilled?: (value?: T) => Promise.Thenable<U> | U,
+			onRejected?: (error?: Error) => Promise.Thenable<U> | U,
+			onProgress?: (data?: any) => any
+		): Promise<U> {
+			return new Promise<U>(function (resolve, reject, progress, setCanceler) {
+				setCanceler(function (reason) {
 					if (canceler) {
 						resolve(canceler(reason));
 						return;
@@ -398,7 +338,7 @@ class Promise<T> {
 					throw reason;
 				});
 
-				whenProgress(function (data?:any):void {
+				whenProgress(function (data) {
 					try {
 						if (typeof onProgress === 'function') {
 							progress(onProgress(data));
@@ -414,8 +354,8 @@ class Promise<T> {
 					}
 				});
 
-				whenFinished(function ():void {
-					var callback:(value?:any) => any = state === Promise.State.REJECTED ? onRejected : onFulfilled;
+				whenFinished(function () {
+					var callback: (value?: any) => any = state === Promise.State.REJECTED ? onRejected : onFulfilled;
 
 					if (typeof callback === 'function') {
 						try {
@@ -426,10 +366,11 @@ class Promise<T> {
 						}
 					}
 					else if (state === Promise.State.REJECTED) {
-						reject(resolvedValue);
+						reject(<Error> resolvedValue);
 					}
 					else {
-						resolve(resolvedValue);
+						// Assume T and U are compatible types
+						resolve(<any> resolvedValue);
 					}
 				});
 			});
@@ -439,12 +380,12 @@ class Promise<T> {
 			initializer(
 				resolve.bind(null, Promise.State.FULFILLED),
 				resolve.bind(null, Promise.State.REJECTED),
-				function (data?:any):void {
+				function (data) {
 					if (state === Promise.State.PENDING) {
 						enqueue(runCallbacks.bind(null, progressCallbacks, data));
 					}
 				},
-				function (value:Promise.ICanceler):void {
+				function (value) {
 					canceler = value;
 				}
 			);
@@ -459,7 +400,7 @@ class Promise<T> {
 	 *
 	 * @readonly
 	 */
-	state:Promise.State;
+	state: Promise.State;
 
 	/**
 	 * Cancels any pending asynchronous operation of the promise.
@@ -469,14 +410,12 @@ class Promise<T> {
 	 * A specific reason for failing the operation. If no reason is provided, a default `CancelError` error will be
 	 * used.
 	 */
-	cancel:(reason?:Error, source?:Promise<any>) => void;
+	cancel: (reason?: Error, source?: Promise<any>) => void;
 
 	/**
 	 * Adds a callback to the promise to be invoked when the asynchronous operation throws an error.
 	 */
-	catch<U>(onRejected:(error?:Error) => U):Promise<U>;
-	catch<U>(onRejected:(error?:Error) => Promise<U>):Promise<U>;
-	catch<U>(onRejected:(error?:Error) => any):Promise<U> {
+	catch<U>(onRejected: (error?: Error) => Promise.Thenable<U> | U): Promise<U> {
 		return this.then<U>(null, onRejected);
 	}
 
@@ -484,44 +423,49 @@ class Promise<T> {
 	 * Adds a callback to the promise to be invoked regardless of whether or not the asynchronous operation completed
 	 * successfully.
 	 */
-	finally<U>(onFulfilledOrRejected:(value?:any) => U):Promise<U>;
-	finally<U>(onFulfilledOrRejected:(value?:any) => Promise<U>):Promise<U>;
-	finally<U>(onFulfilledOrRejected:(value?:any) => any):Promise<U> {
+	finally<U>(onFulfilledOrRejected: (value?: T | Error) => Promise.Thenable<U> | U): Promise<U> {
 		return this.then<U>(onFulfilledOrRejected, onFulfilledOrRejected);
 	}
 
 	/**
 	 * Adds a callback to the promise to be invoked when progress occurs within the asynchronous operation.
 	 */
-	progress(onProgress:(data?:any) => any):Promise<T> {
+	progress(onProgress: (data?: any) => any): Promise<T> {
 		return this.then<T>(null, null, onProgress);
 	}
 
 	/**
 	 * Adds a callback to the promise to be invoked when the asynchronous operation completes successfully.
 	 */
-	then:{
-		<U>(onFulfilled?:(value?:T) => U,          onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => any):Promise<U>;
-		<U>(onFulfilled?:(value?:T) => U,          onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => any):Promise<U>;
-		<U>(onFulfilled?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => U,          onProgress?:(data?:any) => any):Promise<U>;
-		<U>(onFulfilled?:(value?:T) => Promise<U>, onRejected?:(error?:Error) => Promise<U>, onProgress?:(data?:any) => any):Promise<U>;
-	};
-
-	// workaround for TS#2557
-	static Deferred:typeof Deferred = Deferred;
+	then: <U>(
+		onFulfilled?: (value?: T) => Promise.Thenable<U> | U,
+		onRejected?: (error?: Error) => Promise.Thenable<U> | U,
+		onProgress?: (data?: any) => any
+	) => Promise<U>;
 }
 
 module Promise {
-	export interface ICanceler {
-		(reason:Error):any;
+	export interface Canceler {
+		(reason: Error): any;
 	}
 
-	// workaround for TS#2557
-	export interface Deferred<T> {
+	/**
+	 * The Deferred class unwraps a promise in order to expose its internal state management functions.
+	 */
+	export class Deferred<T> {
 		/**
 		 * The underlying promise for the Deferred.
 		 */
-		promise:Promise<T>;
+		promise: Promise<T>;
+
+		constructor(canceler?: Promise.Canceler) {
+			this.promise = new Promise<T>((resolve, reject, progress, setCanceler) => {
+				this.progress = progress;
+				this.reject = reject;
+				this.resolve = resolve;
+				canceler && setCanceler(canceler);
+			});
+		}
 
 		/**
 		 * Sends progress information for the underlying promise.
@@ -529,26 +473,23 @@ module Promise {
 		 * @method
 		 * @param data Additional information about the asynchronous operation’s progress.
 		 */
-		progress:(data?:any) => void;
+		progress: (data?: any) => void;
 
 		/**
 		 * Rejects the underlying promise with an error.
 		 *
 		 * @method
-		 * @param error The error that should be used as the resolved value for the promise.
+		 * @param error The error that should be used as the fulfilled value for the promise.
 		 */
-		reject:(error?:Error) => void;
+		reject: (error?: Error) => void;
 
 		/**
 		 * Resolves the underlying promise with a value.
 		 *
 		 * @method
-		 * @param value The value that should be used as the resolved value for the promise.
+		 * @param value The value that should be used as the fulfilled value for the promise.
 		 */
-		resolve:{
-			(value?:T):void;
-			(value?:Promise<T>):void;
-		};
+		resolve: (value?: Promise.Thenable<T> | T) => void;
 	}
 
 	/**
@@ -558,6 +499,13 @@ module Promise {
 		PENDING,
 		FULFILLED,
 		REJECTED
+	}
+
+	export interface Thenable<T> {
+		then<U>(
+			onFulfilled?: (value?: T) => Promise.Thenable<U> | U,
+			onRejected?: (error?: Error) => Promise.Thenable<U> | U
+		): Promise.Thenable<U>;
 	}
 }
 

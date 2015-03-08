@@ -113,10 +113,10 @@ export interface IRequireCallback {
 export interface IRootRequire extends IRequire {
 	config(config:IConfig):void;
 	has:has;
-	inspect?:(name:string) => any;
-	nodeRequire?:typeof require;
-	signal:(type:string, data:any[]) => void;
-	undef:(moduleId:string) => void;
+	inspect?(name:string):any;
+	nodeRequire?(id:string):any;
+	signal(type:string, data:any[]):void;
+	undef(moduleId:string):void;
 }
 
 (function ():void {
