@@ -34,7 +34,7 @@ class DateObject implements core.IDateObject {
 			_date = new Date(+value);
 		}
 		else if (typeof value === 'number' || typeof value === 'string') {
-			_date = new Date(value);
+			_date = new Date(<any> value);
 		}
 		else {
 			_date = new Date(
