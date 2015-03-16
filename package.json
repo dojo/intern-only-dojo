@@ -15,9 +15,9 @@
     "prepublish": "support/prepublish.sh"
   },
   "devDependencies": {
-    "typescript": "1.3.0",
+    "typescript": "1.4.1",
     "grunt": "0.4.5",
-    "grunt-ts": "2.0.1",
-    "intern": "2.2.1"
+    "grunt-ts": "3.0.0",
+    "intern": "2.2.2"
   }
 }
