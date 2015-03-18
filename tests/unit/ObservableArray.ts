@@ -32,7 +32,8 @@ registerSuite({
 		assert.instanceOf(observable, Array);
 		assert.instanceOf(observable, ObservableArray);
 		assert.strictEqual(observable.length, 5);
-		assert.deepEqual(observable, array);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable), array);
 	},
 
 	'#concat': function () {
@@ -40,7 +41,8 @@ registerSuite({
 			observable2 = observable1.concat(ObservableArray.from([4, 5, 6]), ObservableArray.from([7, 8, 9]));
 
 		assert.instanceOf(observable2, ObservableArray);
-		assert.deepEqual(observable2, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable2), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
 	},
 
 	'#every': function () {
@@ -61,7 +63,8 @@ registerSuite({
 			});
 
 		assert.instanceOf(filtered, ObservableArray);
-		assert.deepEqual(filtered, [2, 3]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(filtered), [2, 3]);
 	},
 
 	'#indexOf': function () {
@@ -97,7 +100,8 @@ registerSuite({
 			});
 
 		assert.instanceOf(mapped, ObservableArray);
-		assert.deepEqual(mapped, ['foo1', 'foo2', 'foo3']);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(mapped), ['foo1', 'foo2', 'foo3']);
 	},
 
 	'#pop': function () {
@@ -111,7 +115,8 @@ registerSuite({
 		var observable = ObservableArray.from([1, 2, 3]);
 
 		assert.strictEqual(observable.push(4, 5, 6), 6);
-		assert.deepEqual(observable, [1, 2, 3, 4, 5, 6]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable), [1, 2, 3, 4, 5, 6]);
 	},
 
 	'#reduce': function () {
@@ -125,7 +130,8 @@ registerSuite({
 
 		observable.reverse();
 
-		assert.deepEqual(observable, [3, 2, 1]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable), [3, 2, 1]);
 	},
 
 	'#shift': function () {
@@ -139,12 +145,13 @@ registerSuite({
 		var observable = ObservableArray.from([1, 2, 3]);
 
 		assert.instanceOf(observable.slice(0, 2), ObservableArray);
-		assert.deepEqual(observable.slice(0), [1, 2, 3]);
-		assert.deepEqual(observable.slice(0, 2), [1, 2]);
-		assert.deepEqual(observable.slice(0, 4), [1, 2, 3]);
-		assert.deepEqual(observable.slice(2), [3]);
-		assert.deepEqual(observable.slice(2, 4), [3]);
-		assert.deepEqual(observable.slice(1, 3), [2, 3]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable.slice(0)), [1, 2, 3]);
+		assert.deepEqual(Array.prototype.slice.call(observable.slice(0, 2)), [1, 2]);
+		assert.deepEqual(Array.prototype.slice.call(observable.slice(0, 4)), [1, 2, 3]);
+		assert.deepEqual(Array.prototype.slice.call(observable.slice(2)), [3]);
+		assert.deepEqual(Array.prototype.slice.call(observable.slice(2, 4)), [3]);
+		assert.deepEqual(Array.prototype.slice.call(observable.slice(1, 3)), [2, 3]);
 	},
 
 	'#some': function () {
@@ -171,7 +178,8 @@ registerSuite({
 			return 0;
 		});
 
-		assert.deepEqual(observable, [0, 1, 4, 7, 10, 12, 32]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable), [0, 1, 4, 7, 10, 12, 32]);
 	},
 
 	'#splice': function () {
@@ -180,14 +188,16 @@ registerSuite({
 		var removals = observable.splice(1, 1, 4, 5, 6);
 
 		assert.instanceOf(removals, ObservableArray);
-		assert.deepEqual(observable, [1, 4, 5, 6, 3]);
-		assert.deepEqual(removals, [2]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable), [1, 4, 5, 6, 3]);
+		assert.deepEqual(Array.prototype.slice.call(removals), [2]);
 	},
 
 	'#unshift': function () {
 		var observable = ObservableArray.from([1, 2, 3]);
 
 		assert.strictEqual(observable.unshift(4, 5, 6), 6);
-		assert.deepEqual(observable, [4, 5, 6, 1, 2, 3]);
+		/* Observable Arrays are not true arrays */
+		assert.deepEqual(Array.prototype.slice.call(observable), [4, 5, 6, 1, 2, 3]);
 	}
 });
