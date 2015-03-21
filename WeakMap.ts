@@ -1,9 +1,10 @@
+import core = require('./interfaces');
 import has = require('./has');
 import lang = require('./lang');
 
 has.add('es6-weak-map', typeof (<any> WeakMap) !== 'undefined');
 
-class WeakMapPolyfill<K, V> {
+class WeakMapPolyfill<K, V> implements core.IWeakMap<K, V> {
 	private _name:string = undefined;
 	static length:number = 1;
 
@@ -50,14 +51,12 @@ class WeakMapPolyfill<K, V> {
 	}
 }
 
-var WM:any;
-
 if (!has('es6-weak-map')) {
 	var startId:number = Math.floor(Date.now() % 100000000);
-	WM = WeakMapPolyfill;
 }
-else {
-	WM = WeakMap;
-}
+
+var WM:any;
+
+WM = has('es6-weak-map') ? WeakMap : WeakMapPolyfill;
 
 export = WM;
