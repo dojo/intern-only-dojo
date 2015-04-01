@@ -8,7 +8,7 @@ import registerSuite = require('intern!object');
 var queue:CallbackQueue<Function>;
 
 interface ISpy extends Function {
-	args?:IArguments;
+	args?:any;
 	called:boolean;
 	(...args:any[]):any;
 }
@@ -98,8 +98,11 @@ registerSuite({
 	},
 
 	'arguments': function () {
-		var one:ISpy = <any>function () {
-			one.args = arguments;
+        var one: ISpy = <any>function () {
+            one.args = {};
+            for (var i in arguments) {
+                one.args[i] = arguments[i];
+            }
 			one.called = true;
 		};
 
@@ -107,6 +110,6 @@ registerSuite({
 		queue.drain(1, 2, 3);
 
 		assert.ok(one.called);
-		assert.deepEqual(one.args, [1, 2, 3]);
+        assert.deepEqual(one.args, { 0: 1, 1: 2, 2: 3 });
 	}
 });
