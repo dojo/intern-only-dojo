@@ -1,4 +1,3 @@
-/// <reference path="../nodejs" />
 import core = require('../interfaces');
 import http = require('http');
 import https = require('https');

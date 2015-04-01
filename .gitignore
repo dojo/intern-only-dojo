@@ -3,5 +3,5 @@
 *.js
 *.js.map
 node_modules
-!/node.js
+!src/node.js
 !/Gruntfile.js

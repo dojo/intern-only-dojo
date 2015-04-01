@@ -1,4 +1,3 @@
-/// <reference path="./nodejs" />
 import has = require('./has');
 import loader = require('./loader');
 
@@ -17,7 +16,7 @@ if (has('host-browser')) {
 	};
 }
 else if (has('host-node')) {
-	var fs = require('fs');
+	var fs = (<any> require).nodeRequire ? (<any> require).nodeRequire('fs') : require('fs');
 	getText = function (url:string, callback:(value:string) => void):void {
 		fs.readFile(url, { encoding: 'utf8' }, function (error:Error, data:string):void {
 			if (error) {
