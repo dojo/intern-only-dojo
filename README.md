@@ -45,4 +45,4 @@ will be provided in the near future as our release tools are improved.
 
 ## Licensing information
 
-© 2004–2014 Dojo Foundation & contributors. [New BSD](http://opensource.org/licenses/BSD-3-Clause) license.
+© 2004–2015 Dojo Foundation & contributors. [New BSD](http://opensource.org/licenses/BSD-3-Clause) license.
