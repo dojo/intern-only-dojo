@@ -1,21 +1,19 @@
-/// <reference path="../intern.d.ts" />
-
 import assert = require('intern/chai!assert');
-import core = require('../../interfaces');
-import Observable = require('../../Observable');
+import core = require('src/interfaces');
+import Observable = require('src/Observable');
 import registerSuite = require('intern!object');
 
 class TestObservable extends Observable {
-	foo:string;
-	baz:string;
+	foo: string;
+	baz: string;
 }
 
 class TestAccessorObservable extends Observable {
-	private _foo:string;
-	get foo():string {
+	private _foo: string;
+	get foo(): string {
 		return this._foo;
 	}
-	set foo(value:string) {
+	set foo(value: string) {
 		this._foo = value;
 	}
 }
@@ -41,7 +39,7 @@ registerSuite({
 				baz: 'blah'
 			});
 
-			observable.observe('foo', dfd.callback((value:string, oldValue:string) => {
+			observable.observe('foo', dfd.callback((value: string, oldValue: string) => {
 				assert.strictEqual(value, 'thonk');
 				assert.strictEqual(oldValue, 'bar');
 			}));
@@ -51,12 +49,11 @@ registerSuite({
 
 		'accessor': function () {
 			var dfd = this.async();
-
 			var observable = new TestAccessorObservable({
 				foo: 'bar'
 			});
 
-			observable.observe('foo', dfd.callback((value:string, oldValue:string) => {
+			observable.observe('foo', dfd.callback((value: string, oldValue: string) => {
 				assert.strictEqual(value, 'baz');
 				assert.strictEqual(oldValue, 'bar');
 			}));
@@ -132,7 +129,7 @@ registerSuite({
 				baz: 'blah'
 			});
 
-			observable.observe('foo', dfd.callback((newValue:string, oldValue:string) => {
+			observable.observe('foo', dfd.callback((newValue: string, oldValue: string) => {
 				assert.strictEqual(newValue, 'baz');
 				assert.strictEqual(oldValue, 'bar');
 			}));

@@ -2,9 +2,9 @@
     "version": "1.4.1",
     "compilerOptions": {
         "declaration": false,
-        "module": "commonjs",
+        "module": "amd",
         "noImplicitAny": true,
-        "outDir": "dist/",
+        "outDir": "dist-amd/",
         "removeComments": false,
         "sourceMap": true,
         "target": "es5"
@@ -18,8 +18,6 @@
         "./src/DateObject.ts",
         "./src/Evented.ts",
         "./src/Observable.ts",
-        "./src/ObservableArray.ts",
-        "./src/ObservableProperty.ts",
         "./src/Promise.ts",
         "./src/Registry.ts",
         "./src/Scheduler.ts",

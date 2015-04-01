@@ -1,18 +1,16 @@
-/// <reference path="../intern.d.ts" />
-
 import assert = require('intern/chai!assert');
-import DateObject = require('../../DateObject');
+import DateObject = require('src/DateObject');
 import registerSuite = require('intern!object');
 
-var date:Date,
-	object:DateObject;
+var date: Date;
+var object: DateObject;
 
 registerSuite({
 	name: 'DateObject',
 
 	'creation': function () {
-		var date = new Date(),
-			object = new DateObject();
+		var date = new Date();
+		var object = new DateObject();
 
 		assert.closeTo(object.valueOf(), +date, 100);
 
@@ -134,8 +132,8 @@ registerSuite({
 	},
 
 	'.to* methods': function () {
-		var date = new Date(),
-			object = new DateObject(date);
+		var date = new Date();
+		var object = new DateObject(date);
 
 		assert.strictEqual(object.toString(), date.toString());
 		assert.strictEqual(object.toDateString(), date.toDateString());
@@ -148,8 +146,8 @@ registerSuite({
 	},
 
 	'.add': function () {
-		var object1:DateObject,
-			object2:DateObject;
+		var object1: DateObject;
+		var object2: DateObject;
 
 		// year
 		object1 = new DateObject({ year: 2005, month: 12, dayOfMonth: 27 });
@@ -231,7 +229,7 @@ registerSuite({
 		});
 
 		assert.strictEqual(date.daysInMonth, 31);
-		date.month = 2; 
+		date.month = 2;
 		assert.strictEqual(date.daysInMonth, 28);
 		date.month = 3;
 		assert.strictEqual(date.daysInMonth, 31);

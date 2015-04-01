@@ -1,7 +1,5 @@
-/// <reference path="../intern.d.ts" />
-
 import assert = require('intern/chai!assert');
-import string = require('../../string');
+import string = require('src/string');
 import registerSuite = require('intern!object');
 
 registerSuite({

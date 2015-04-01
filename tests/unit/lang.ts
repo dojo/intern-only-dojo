@@ -1,31 +1,29 @@
-/// <reference path="../intern.d.ts" />
-
 import assert = require('intern/chai!assert');
-import lang = require('../../lang');
+import lang = require('src/lang');
 import registerSuite = require('intern!object');
 
-var global:any = (function () {
+var global: any = (function () {
 	return this;
 })();
 
 interface IExtraProps extends IProps {
-	newProperty:string;
+	newProperty: string;
 }
 
 interface IProps {
-	property:string;
-	subObject:ISubObject;
-	method():void;
+	property: string;
+	subObject: ISubObject;
+	method(): void;
 }
 
 interface ISpy {
-	(...args:any[]):any;
-	args:IArguments;
+	(...args: any[]): any;
+	args: IArguments;
 }
 
 interface ISubObject {
-	property:string;
-	otherProperty?:string;
+	property: string;
+	otherProperty?: string;
 }
 
 registerSuite({
@@ -79,11 +77,11 @@ registerSuite({
 			},
 			method: function () {}
 		};
-		var dest:IProps = lang.mixin<IProps>({}, properties);
+		var dest: IProps = lang.mixin<IProps>({}, properties);
 		assert.deepEqual(dest, properties);
 		assert.deepEqual(dest.subObject, properties.subObject);
 
-		var extra:IExtraProps = lang.mixin<IExtraProps>({}, properties, {
+		var extra: IExtraProps = lang.mixin<IExtraProps>({}, properties, {
 			property: 'blah',
 			newProperty: 'foo'
 		});
@@ -95,7 +93,7 @@ registerSuite({
 	},
 
 	'.delegate': function () {
-		var src:IProps = {
+		var src: IProps = {
 			property: 'bar',
 			subObject: {
 				property: 'baz'
@@ -103,7 +101,7 @@ registerSuite({
 			method: function () {}
 		};
 
-		var dest:IExtraProps = lang.delegate<IExtraProps>(src, { newProperty: 'bar' });
+		var dest: IExtraProps = lang.delegate<IExtraProps>(src, { newProperty: 'bar' });
 
 		assert.strictEqual(dest.property, src.property);
 		assert.strictEqual(dest.subObject, src.subObject);
@@ -155,7 +153,7 @@ registerSuite({
 				someProperty: 'foo'
 			};
 
-			var unbound = function (variable:string) {
+			var unbound = function (variable: string) {
 				assert.strictEqual(this.someProperty, 'foo');
 				assert.strictEqual(variable, 'bar');
 			};
@@ -186,7 +184,7 @@ registerSuite({
 			'arguments': function () {
 				var context = {
 					someProperty: 'foo',
-					method: function (variable:string) {
+					method: function (variable: string) {
 						assert.strictEqual(this.someProperty, 'foo');
 						assert.strictEqual(variable, 'bar');
 					}
@@ -202,16 +200,16 @@ registerSuite({
 	},
 
 	'.partial': function () {
-		var f = <ISpy>function () {
-			f.args = arguments;
+		var f = <ISpy> function () {
+			f.args = Array.prototype.slice.call(arguments, 0);
 		};
 
-		var partial1 = lang.partial<(a:string, b:string) => void>(f, 'foo');
+		var partial1 = lang.partial<(a: string, b: string) => void>(f, 'foo');
 
 		partial1('bar', 'baz');
 		assert.deepEqual(f.args, [ 'foo', 'bar', 'baz' ]);
 
-		var partial2 = lang.partial<(a:string) => void>(f, 'foo', 'bar');
+		var partial2 = lang.partial<(a: string) => void>(f, 'foo', 'bar');
 		partial2('baz');
 		assert.deepEqual(f.args, [ 'foo', 'bar', 'baz' ]);
 	},
@@ -224,11 +222,11 @@ registerSuite({
 			},
 			method: function () {}
 		};
-		var dest:IProps = lang.deepMixin<IProps>({}, properties);
+		var dest: IProps = lang.deepMixin<IProps>({}, properties);
 		assert.deepEqual(dest, properties);
 		assert.notStrictEqual(dest.subObject, properties.subObject);
 
-		var extra:IExtraProps = lang.deepMixin<IExtraProps>(dest, {
+		var extra: IExtraProps = lang.deepMixin<IExtraProps>(dest, {
 			property: 'bar', // this is the same value on purpose for branch coverage
 			newProperty: 'foo',
 			subObject: {
@@ -251,14 +249,14 @@ registerSuite({
 	},
 
 	'.deepDelegate': function () {
-		var properties:IProps = {
+		var properties: IProps = {
 			property: 'bar',
 			subObject: {
 				property: 'baz'
 			},
 			method: function () {}
 		};
-		var dest:IExtraProps = lang.deepDelegate<IExtraProps>(properties, {
+		var dest: IExtraProps = lang.deepDelegate<IExtraProps>(properties, {
 			newProperty: 'foo',
 			subObject: {
 				otherProperty: 'la'
@@ -282,15 +280,15 @@ registerSuite({
 			get foo() {
 				return foo;
 			},
-			set foo(value:number) {
+			set foo(value: number) {
 				foo = value;
 			}
 		};
-		var prototype2 = Object.create(prototype),
-			object = Object.create(prototype2);
+		var prototype2 = Object.create(prototype);
+		var object = Object.create(prototype2);
 
-		var descriptor = lang.getPropertyDescriptor(object, 'foo'),
-			expected = Object.getOwnPropertyDescriptor(prototype, 'foo');
+		var descriptor = lang.getPropertyDescriptor(object, 'foo');
+		var expected = Object.getOwnPropertyDescriptor(prototype, 'foo');
 
 		assert.ok(!Object.getOwnPropertyDescriptor(object, 'foo'));
 		assert.ok(descriptor);

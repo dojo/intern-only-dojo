@@ -272,14 +272,21 @@ class Promise<T> {
 
 			if (isPromise(value)) {
 				if (value === this) {
-					throw new TypeError('Cannot chain a promise to itself');
+					settle(Promise.State.REJECTED, new TypeError('Cannot chain a promise to itself'));
+					return;
 				}
 
-				isChained = true;
-				value.then(
-					settle.bind(null, Promise.State.FULFILLED),
-					settle.bind(null, Promise.State.REJECTED)
-				);
+				try {
+					value.then(
+						settle.bind(null, Promise.State.FULFILLED),
+						settle.bind(null, Promise.State.REJECTED)
+					);
+					isChained = true;
+				}
+				catch (error) {
+					settle(Promise.State.REJECTED, error);
+					return;
+				}
 
 				this.cancel = value.cancel;
 			}
@@ -295,6 +302,10 @@ class Promise<T> {
 		 * @param {T|Error} value The resolved value for this promise.
 		 */
 		function settle(newState: Promise.State, value: any) {
+			if (state !== Promise.State.PENDING) {
+				return;
+			}
+
 			state = newState;
 			resolvedValue = value;
 			whenFinished = enqueue;

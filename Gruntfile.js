@@ -133,7 +133,7 @@ module.exports = function (grunt) {
 				options: {
 					module: 'amd'
 				},
-				src: [ 'tests/**/*.ts' ]
+				src: [ 'tests/**/*.ts', 'typings/tsd.d.ts' ]
 			}
 		},
 
@@ -198,21 +198,23 @@ module.exports = function (grunt) {
 		'dts:dojo'
 	]);
 	grunt.registerTask('build-cjs', [
+		'clean:cjs',
 		'ts:cjs',
-		'_process-build'
+		'_process-build',
+		'rename:cjs'
 	]);
 	grunt.registerTask('build-amd', [
-		'ts:amd',
+		'clean:amd',
 		'ts:amdLoader',
-		'_process-build'
+		'ts:amd',
+		'_process-build',
+		'rename:amd'
 	]);
 	grunt.registerTask('build', [
 		'build-cjs',
-		'rename:cjs',
-		'build-amd',
-		'rename:amd'
+		'build-amd'
 	]);
-	grunt.registerTask('test', [ 'tslint', 'ts:tests', 'intern:client' ]);
+	grunt.registerTask('test', [ 'ts:tests', 'intern:client' ]);
 	grunt.registerTask('ci', [ 'tslint', 'build-amd', 'test' ]);
 	grunt.registerTask('default', [ 'clean', 'build' ]);
 };
