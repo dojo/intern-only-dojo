@@ -1,14 +1,13 @@
-import core = require('./interfaces');
 import lang = require('./lang');
 
-declare var exports:any;
+declare var exports: any;
 
-export function repeat(string:string, times:number):string {
+export function repeat(string: string, times: number): string {
 	if (!string || times <= 0) {
 		return '';
 	}
 
-	var buffer:string[] = [];
+	var buffer: string[] = [];
 	while (true) {
 		if (times & 1) {
 			buffer.push(string);
@@ -28,7 +27,7 @@ enum Padding {
 	Both
 };
 
-function _pad(text:string, size:number, character:string, position:Padding = Padding.Right):string {
+function _pad(text: string, size: number, character: string, position: Padding = Padding.Right): string {
 	var length = size - text.length,
 		pad = exports.repeat(character, Math.ceil(length / character.length));
 
@@ -44,33 +43,32 @@ function _pad(text:string, size:number, character:string, position:Padding = Pad
 	}
 }
 
-export function pad(text:string, size:number, character:string = ' '):string {
+export function pad(text: string, size: number, character: string = ' '): string {
 	return _pad(text, size, character, Padding.Both);
 }
 
-export function padr(text:string, size:number, character:string = ' '):string {
+export function padr(text: string, size: number, character: string = ' '): string {
 	return _pad(text, size, character, Padding.Right);
 }
-export function padl(text:string, size:number, character:string = ' '):string {
+export function padl(text: string, size: number, character: string = ' '): string {
 	return _pad(text, size, character, Padding.Left);
 }
 
 export interface ITransform {
-	(value:any, key?:string):any;
+	(value: any, key?: string): any;
 }
 
-var substitutePattern = /\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g;
-function defaultTransform(value:any):any {
+var substitutePattern = /\$\{([^\s\: \}]+)(?: \: ([^\s\: \}]+))?\}/g;
+function defaultTransform(value: any): any {
 	return value;
 };
-export function substitute(template:string, map:Object, transform?:ITransform, context?:any):string;
-export function substitute(template:string, map:Array<any>, transform?:ITransform, context?:any):string;
-export function substitute(template:string, map:any, transform?:ITransform, context?:any):string {
+export function substitute(template: string, map: Object, transform?: ITransform, context?: any): string;
+export function substitute(template: string, map: Array<any>, transform?: ITransform, context?: any): string;
+export function substitute(template: string, map: any, transform?: ITransform, context?: any): string {
 	context = context || undefined;
 	transform = transform ? transform.bind(context) : defaultTransform;
 
-	// TODO: remove <any> after https://typescript.codeplex.com/workitem/1812 is fixed
-	return template.replace(<any>substitutePattern, <any>function (match:string, key:string, format:string) {
+	return template.replace(substitutePattern, function (match: string, key: string, format: string) {
 		var value = lang.getProperty(map, key);
 		if (format) {
 			value = lang.getProperty(context, format).call(context, value, key);
@@ -79,7 +77,7 @@ export function substitute(template:string, map:any, transform?:ITransform, cont
 	});
 }
 
-export function count(haystack:string, needle:string):number {
+export function count(haystack: string, needle: string): number {
 	var hits = 0,
 		lastIndex = haystack.indexOf(needle);
 
@@ -92,6 +90,6 @@ export function count(haystack:string, needle:string):number {
 }
 
 var regExpPattern = /[-\[\]{}()*+?.,\\\^$|#\s]/g;
-export function escapeRegExpString(string:string):string {
+export function escapeRegExpString(string: string): string {
 	return string.replace(regExpPattern, '\\$&');
 }

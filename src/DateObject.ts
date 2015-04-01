@@ -1,32 +1,31 @@
 import core = require('./interfaces');
 
-var days = [null, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-	operationOrder = [ 'year', 'month', 'dayOfMonth', 'hours', 'minutes',
-					   'seconds', 'milliseconds' ];
+var days = [ null, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+var operationOrder = [ 'year', 'month', 'dayOfMonth', 'hours', 'minutes', 'seconds', 'milliseconds' ];
 
-function isLeapYear(year:number):boolean {
+function isLeapYear(year: number): boolean {
 	var date = new Date(year, 1, 29);
 	return date.getDate() === 29;
 }
 
 class DateObject implements core.IDateObject {
-	static parse(string:string):DateObject {
+	static parse(string: string): DateObject {
 		return new DateObject(Date.parse(string));
 	}
-	static now():DateObject {
+	static now(): DateObject {
 		return new DateObject(Date.now());
 	}
 
-	private _date:Date;
-	utc:core.IDateObject;
+	private _date: Date;
+	utc: core.IDateObject;
 
-	constructor(value:number);
-	constructor(value:string);
-	constructor(value:Date);
-	constructor(value:core.IDateObjectArguments);
+	constructor(value: number);
+	constructor(value: string);
+	constructor(value: Date);
+	constructor(value: core.IDateObjectArguments);
 	constructor();
-	constructor(value?:any) {
-		var _date:Date;
+	constructor(value?: any) {
+		var _date: Date;
 		if (!arguments.length) {
 			_date = new Date();
 		}
@@ -58,10 +57,10 @@ class DateObject implements core.IDateObject {
 		var self = this;
 		Object.defineProperty(this, 'utc', {
 			value: {
-				get isLeapYear():boolean {
+				get isLeapYear(): boolean {
 					return isLeapYear(this.year);
 				},
-				get daysInMonth():number {
+				get daysInMonth(): number {
 					var month = this.month;
 
 					if (month === 2 && this.isLeapYear) {
@@ -70,60 +69,60 @@ class DateObject implements core.IDateObject {
 					return days[month];
 				},
 
-				get year():number {
+				get year(): number {
 					return self._date.getUTCFullYear();
 				},
-				set year(year:number) {
+				set year(year: number) {
 					self._date.setUTCFullYear(year);
 				},
 
-				get month():number {
+				get month(): number {
 					return self._date.getUTCMonth() + 1;
 				},
-				set month(month:number) {
+				set month(month: number) {
 					self._date.setUTCMonth(month - 1);
 				},
 
-				get dayOfMonth():number {
+				get dayOfMonth(): number {
 					return self._date.getUTCDate();
 				},
-				set dayOfMonth(day:number) {
+				set dayOfMonth(day: number) {
 					self._date.setUTCDate(day);
 				},
 
-				get hours():number {
+				get hours(): number {
 					return self._date.getUTCHours();
 				},
-				set hours(hours:number) {
+				set hours(hours: number) {
 					self._date.setUTCHours(hours);
 				},
 
-				get minutes():number {
+				get minutes(): number {
 					return self._date.getUTCMinutes();
 				},
-				set minutes(minutes:number) {
+				set minutes(minutes: number) {
 					self._date.setUTCMinutes(minutes);
 				},
 
-				get seconds():number {
+				get seconds(): number {
 					return self._date.getUTCSeconds();
 				},
-				set seconds(seconds:number) {
+				set seconds(seconds: number) {
 					self._date.setUTCSeconds(seconds);
 				},
 
-				get milliseconds():number {
+				get milliseconds(): number {
 					return self._date.getUTCMilliseconds();
 				},
-				set milliseconds(milliseconds:number) {
+				set milliseconds(milliseconds: number) {
 					self._date.setUTCMilliseconds(milliseconds);
 				},
 
-				get dayOfWeek():number {
+				get dayOfWeek(): number {
 					return self._date.getUTCDay();
 				},
 
-				toString: function ():string {
+				toString: function (): string {
 					return self._date.toUTCString();
 				}
 			},
@@ -131,11 +130,11 @@ class DateObject implements core.IDateObject {
 		});
 	}
 
-	get isLeapYear():boolean {
+	get isLeapYear(): boolean {
 		return isLeapYear(this.year);
 	}
 
-	get daysInMonth():number {
+	get daysInMonth(): number {
 		var month = this.month;
 
 		if (month === 2 && this.isLeapYear) {
@@ -144,10 +143,10 @@ class DateObject implements core.IDateObject {
 		return days[month];
 	}
 
-	get year():number {
+	get year(): number {
 		return this._date.getFullYear();
 	}
-	set year(year:number) {
+	set year(year: number) {
 		var dayOfMonth = this.dayOfMonth;
 
 		this._date.setFullYear(year);
@@ -157,10 +156,10 @@ class DateObject implements core.IDateObject {
 		}
 	}
 
-	get month():number {
+	get month(): number {
 		return this._date.getMonth() + 1;
 	}
-	set month(month:number) {
+	set month(month: number) {
 		var dayOfMonth = this.dayOfMonth;
 
 		this._date.setMonth(month - 1);
@@ -170,95 +169,95 @@ class DateObject implements core.IDateObject {
 		}
 	}
 
-	get dayOfMonth():number {
+	get dayOfMonth(): number {
 		return this._date.getDate();
 	}
-	set dayOfMonth(day:number) {
+	set dayOfMonth(day: number) {
 		this._date.setDate(day);
 	}
 
-	get hours():number {
+	get hours(): number {
 		return this._date.getHours();
 	}
-	set hours(hours:number) {
+	set hours(hours: number) {
 		this._date.setHours(hours);
 	}
 
-	get minutes():number {
+	get minutes(): number {
 		return this._date.getMinutes();
 	}
-	set minutes(minutes:number) {
+	set minutes(minutes: number) {
 		this._date.setMinutes(minutes);
 	}
 
-	get seconds():number {
+	get seconds(): number {
 		return this._date.getSeconds();
 	}
-	set seconds(seconds:number) {
+	set seconds(seconds: number) {
 		this._date.setSeconds(seconds);
 	}
 
-	get milliseconds():number {
+	get milliseconds(): number {
 		return this._date.getMilliseconds();
 	}
-	set milliseconds(milliseconds:number) {
+	set milliseconds(milliseconds: number) {
 		this._date.setMilliseconds(milliseconds);
 	}
 
-	get time():number {
+	get time(): number {
 		return this._date.getTime();
 	}
-	set time(time:number) {
+	set time(time: number) {
 		this._date.setTime(time);
 	}
 
-	get dayOfWeek():number {
+	get dayOfWeek(): number {
 		return this._date.getDay();
 	}
-	get timezoneOffset():number {
+	get timezoneOffset(): number {
 		return this._date.getTimezoneOffset();
 	}
 
-	add(value:core.IDateObjectOperationArguments):DateObject {
+	add(value: core.IDateObjectOperationArguments): DateObject {
 		var result = new DateObject(this);
 
 		// perform from year -> milliseconds in case the year
 		// and month operations cause an overshoot
-		operationOrder.forEach((property:string):void => {
+		operationOrder.forEach((property: string): void => {
 			if (!(property in value)) {
 				return;
 			}
 
-			(<any>result)[property] += (<any>value)[property];
+			(<any> result)[property] += (<any> value)[property];
 		});
 		return result;
 	}
 
-	toString():string {
+	toString(): string {
 		return this._date.toString();
 	}
-	toDateString():string {
+	toDateString(): string {
 		return this._date.toDateString();
 	}
-	toTimeString():string {
+	toTimeString(): string {
 		return this._date.toTimeString();
 	}
-	toLocaleString():string {
+	toLocaleString(): string {
 		return this._date.toLocaleString();
 	}
-	toLocaleDateString():string {
+	toLocaleDateString(): string {
 		return this._date.toLocaleDateString();
 	}
-	toLocaleTimeString():string {
+	toLocaleTimeString(): string {
 		return this._date.toLocaleTimeString();
 	}
-	toISOString():string {
+	toISOString(): string {
 		return this._date.toISOString();
 	}
-	toJSON(key?: any):string {
+	toJSON(key?: any): string {
 		return this._date.toJSON(key);
 	}
-	valueOf():number {
+	valueOf(): number {
 		return this._date.valueOf();
 	}
 }

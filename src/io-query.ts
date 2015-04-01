@@ -16,17 +16,17 @@
  *     |         "thonk"
  *     |     ]
  *     | };
- *     
+ *
  *      yields the following query string:
  *
  *     | "blah=blah&multi=thud&multi=thonk"
  */
-export function objectToQuery(map:{}):string {
-	var query:string[] = [];
-	var value:any;
+export function objectToQuery(map: {}): string {
+	var query: string[] = [];
+	var value: any;
 
 	for (var key in map) {
-		value = (<any>map)[key];
+		value = (<any> map)[key];
 
 		key = encodeURIComponent(key);
 

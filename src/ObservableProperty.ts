@@ -1,32 +1,30 @@
-import CallbackQueue = require('./CallbackQueue');
 import core = require('./interfaces');
-import lang = require('./lang');
 import Observable = require('./Observable');
 
 class ObservableProperty<T> extends Observable {
-	private _observable:core.IObservable;
-	private _propertyName:string;
-	private _handle:core.IHandle;
+	private _observable: core.IObservable;
+	private _propertyName: string;
+	private _handle: core.IHandle;
 
-	get value():T {
-		return (<any>this._observable)[this._propertyName];
+	get value(): T {
+		return (<any> this._observable)[this._propertyName];
 	}
-	set value(value:T) {
-		(<any>this._observable)[this._propertyName] = value;
+	set value(value: T) {
+		(<any> this._observable)[this._propertyName] = value;
 	}
 
-	constructor(observable:core.IObservable, property:string) {
+	constructor(observable: core.IObservable, property: string) {
 		this._observable = observable;
 		this._propertyName = property;
 
-		this._handle = observable.observe(property, (newValue:T, oldValue:T) => {
-			(<any>this)._notify('value', newValue, oldValue);
+		this._handle = observable.observe(property, (newValue: T, oldValue: T) => {
+			(<any> this)._notify('value', newValue, oldValue);
 		});
 
 		super();
 
 		// The following line keeps notifications getting set up for 'value'
-		(<any>this)._callbacks['value'] = [];
+		(<any> this)._callbacks['value'] = [];
 	}
 
 	destroy() {
@@ -34,8 +32,8 @@ class ObservableProperty<T> extends Observable {
 		this._observable = null;
 	}
 
-	_schedule():void {
-		(<any>this)._dispatch();
+	_schedule(): void {
+		(<any> this)._dispatch();
 	}
 }
 

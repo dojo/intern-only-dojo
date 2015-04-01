@@ -1,13 +1,13 @@
 import loader = require('./loader');
 
-declare var process:any;
-declare var require:loader.IRootRequire;
+declare var process: any;
+declare var require: loader.IRootRequire;
 
 module has {
 	export interface IHas {
-		(name:string):any;
-		add(name:string, value:(global:Window, document?:HTMLDocument, element?:HTMLDivElement) => any, now?:boolean, force?:boolean):void;
-		add(name:string, value:any, now?:boolean, force?:boolean):void;
+		(name: string): any;
+		add(name: string, value: (global: Window, document?: HTMLDocument, element?: HTMLDivElement) => any, now?: boolean, force?: boolean): void;
+		add(name: string, value: any, now?: boolean, force?: boolean): void;
 	}
 }
 
@@ -15,20 +15,20 @@ module has {
 interface has extends has.IHas, loader.ILoaderPlugin {}
 /* tslint:enable:class-name */
 
-var has:has = require.has;
+var has: has = require.has;
 
 if (!has) {
-	has = (function ():has {
-		var hasCache:{ [name:string]:any; } = Object.create(null);
-		var global:Window = this;
-		var document:HTMLDocument = global.document;
-		var element:HTMLDivElement = document && document.createElement('div');
+	has = (function (): has {
+		var hasCache: { [name: string]: any; } = Object.create(null);
+		var global: Window = this;
+		var document: HTMLDocument = global.document;
+		var element: HTMLDivElement = document && document.createElement('div');
 
-		var has:has = <has> function(name:string):any {
+		var has: has = <has> function(name: string): any {
 			return typeof hasCache[name] === 'function' ? (hasCache[name] = hasCache[name](global, document, element)) : hasCache[name];
 		};
 
-		has.add = function (name:string, test:any, now:boolean, force:boolean):void {
+		has.add = function (name: string, test: any, now: boolean, force: boolean): void {
 			(!(name in hasCache) || force) && (hasCache[name] = test);
 			now && has(name);
 		};
@@ -41,13 +41,13 @@ if (!has) {
 	has.add('debug', true);
 }
 
-has.normalize = function (resourceId:string, normalize:(moduleId:string) => string):string {
-	var tokens = resourceId.match(/[\?:]|[^:\?]*/g);
+has.normalize = function (resourceId: string, normalize: (moduleId: string) => string): string {
+	var tokens = resourceId.match(/[\?: ]|[^: \?]*/g);
 
 	var i = 0;
-	function get(skip?:boolean):string {
+	function get(skip?: boolean): string {
 		var term = tokens[i++];
-		if (term === ':') {
+		if (term === ': ') {
 			// empty string module name, resolves to 0
 			return null;
 		}
@@ -74,7 +74,7 @@ has.normalize = function (resourceId:string, normalize:(moduleId:string) => stri
 	return resourceId && normalize(resourceId);
 };
 
-has.load = function (resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+has.load = function (resourceId: string, require: loader.IRequire, load: (value?: any) => void): void {
 	if (resourceId) {
 		require([ resourceId ], load);
 	}

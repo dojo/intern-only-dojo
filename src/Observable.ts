@@ -3,14 +3,14 @@ import lang = require('./lang');
 import Scheduler = require('./Scheduler');
 
 interface ICallbackObject {
-	removed?:boolean;
-	callback:core.IObserver<any>;
+	removed?: boolean;
+	callback: core.IObserver<any>;
 }
 
 interface INotification {
-	newValue:any;
-	oldValue:any;
-	callbacks:Array<ICallbackObject>;
+	newValue: any;
+	oldValue: any;
+	callbacks: Array<ICallbackObject>;
 }
 
 // TODO: `informImmediately` is a strange beast, but something that is useful.
@@ -18,11 +18,11 @@ interface INotification {
 // initially than providing a boolean parameter to `observe()`.
 
 class Observable implements core.IObservable {
-	private _callbacks: { [property:string]:ICallbackObject[] };
-	private _notifications: { [property:string]:INotification };
-	private _timer:core.IHandle;
+	private _callbacks: { [property: string]: ICallbackObject[] };
+	private _notifications: { [property: string]: INotification };
+	private _timer: core.IHandle;
 
-	constructor(props?:any) {
+	constructor(props?: any) {
 		if (props) {
 			lang.mixin(this, props);
 		}
@@ -67,7 +67,7 @@ class Observable implements core.IObservable {
 				continue;
 			}
 
-			var callback:ICallbackObject;
+			var callback: ICallbackObject;
 			for (var i = 0; (callback = notification.callbacks[i]); i++) {
 				// If a callback was removed after the notification was scheduled to
 				// start, don't call it
@@ -78,11 +78,11 @@ class Observable implements core.IObservable {
 		}
 	}
 
-	_isEqual(a:any, b:any):boolean {
+	_isEqual(a: any, b: any): boolean {
 		return lang.isEqual(a, b);
 	}
 
-	private _notify<T>(property:string, newValue:T, oldValue:T):void {
+	private _notify<T>(property: string, newValue: T, oldValue: T): void {
 		var callbacks = this._callbacks[property];
 		if (!callbacks || !callbacks.length) {
 			return;
@@ -106,15 +106,15 @@ class Observable implements core.IObservable {
 		this._schedule();
 	}
 
-	observe<T>(property:string, callback:core.IObserver<T>):core.IHandle {
-		var callbackObject:ICallbackObject = {
+	observe<T>(property: string, callback: core.IObserver<T>): core.IHandle {
+		var callbackObject: ICallbackObject = {
 			callback: callback
 		};
 
 		if (!this._callbacks[property]) {
 			var oldDescriptor = lang.getPropertyDescriptor(this, property),
-				currentValue:any = (<any>this)[property],
-				descriptor:PropertyDescriptor = {
+				currentValue: any = (<any> this)[property],
+				descriptor: PropertyDescriptor = {
 					configurable: true,
 					enumerable: true
 				};
@@ -123,7 +123,7 @@ class Observable implements core.IObservable {
 				descriptor.get = oldDescriptor.get;
 
 				if (oldDescriptor.set) {
-					descriptor.set = (value:any) => {
+					descriptor.set = (value: any) => {
 						oldDescriptor.set.apply(this, arguments);
 						var newValue = descriptor.get.call(this);
 
@@ -138,7 +138,7 @@ class Observable implements core.IObservable {
 					return currentValue;
 				};
 				if (oldDescriptor.writable) {
-					descriptor.set = (newValue:any) => {
+					descriptor.set = (newValue: any) => {
 						this._notify(property, newValue, currentValue);
 						currentValue = newValue;
 					};
@@ -164,7 +164,7 @@ class Observable implements core.IObservable {
 		};
 	}
 
-	_schedule():void {
+	_schedule(): void {
 		if (!this._timer) {
 			this._timer = Scheduler.schedule(this._dispatch);
 		}

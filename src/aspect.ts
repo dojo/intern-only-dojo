@@ -18,8 +18,8 @@ interface IDispatcher {
 
 var nextId = 0;
 
-function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArguments?:boolean):core.IHandle {
-	var previous = (<any>dispatcher)[type];
+function advise(dispatcher: IDispatcher, type: string, advice: Function, receiveArguments?: boolean): core.IHandle {
+	var previous = (<any> dispatcher)[type];
 	var advised = <IAdvised> {
 		id: nextId++,
 		advice: advice,
@@ -42,27 +42,27 @@ function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArg
 		}
 	}
 	else {
-		(<any>dispatcher)[type] = advised;
+		(<any> dispatcher)[type] = advised;
 	}
 
 	advice = previous = null;
 
 	return {
-		remove: function ():void {
+		remove: function (): void {
 			this.remove = noop;
 
 			var previous = advised.previous;
 			var next = advised.next;
 
 			if (!previous && !next) {
-				(<any>dispatcher)[type] = null;
+				(<any> dispatcher)[type] = null;
 			}
 			else {
 				if (previous) {
 					previous.next = next;
 				}
 				else {
-					(<any>dispatcher)[type] = next;
+					(<any> dispatcher)[type] = next;
 				}
 
 				if (next) {
@@ -75,16 +75,16 @@ function advise(dispatcher:IDispatcher, type:string, advice:Function, receiveArg
 	};
 }
 
-function getDispatcher(target:any, methodName:string):IDispatcher {
+function getDispatcher(target: any, methodName: string): IDispatcher {
 	var existing = target[methodName];
-	var dispatcher:IDispatcher;
+	var dispatcher: IDispatcher;
 
 	if (!existing || existing.target !== target) {
 		// no dispatcher
-		target[methodName] = dispatcher = <IDispatcher> function ():any {
+		target[methodName] = dispatcher = <IDispatcher> function (): any {
 			var executionId = nextId;
 			var args = arguments;
-			var results:any;
+			var results: any;
 			var before = dispatcher.before;
 
 			while (before) {
@@ -113,7 +113,7 @@ function getDispatcher(target:any, methodName:string):IDispatcher {
 
 		if (existing) {
 			dispatcher.around = {
-				advice: function (target:any, args:any[]):any {
+				advice: function (target: any, args: any[]): any {
 					return existing.apply(target, args);
 				}
 			};
@@ -130,21 +130,21 @@ function getDispatcher(target:any, methodName:string):IDispatcher {
 	return dispatcher;
 }
 
-function noop():void {}
+function noop(): void {}
 
-export function after(target:any, methodName:string, advice:Function):core.IHandle {
+export function after(target: any, methodName: string, advice: Function): core.IHandle {
 	return advise(getDispatcher(target, methodName), 'after', advice);
 }
 
-export function around(target:any, methodName:string, advice:(previous:Function) => Function):core.IHandle {
+export function around(target: any, methodName: string, advice: (previous: Function) => Function): core.IHandle {
 	var dispatcher = getDispatcher(target, methodName);
 	var previous = dispatcher.around;
-	var advised = advice(function ():any {
+	var advised = advice(function (): any {
 		return previous.advice(this, arguments);
 	});
 
 	dispatcher.around = {
-		advice: function (target:any, args:any[]):any {
+		advice: function (target: any, args: any[]): any {
 			return advised ?
 				advised.apply(target, args) :
 				previous.advice(target, args);
@@ -154,17 +154,17 @@ export function around(target:any, methodName:string, advice:(previous:Function)
 	advice = null;
 
 	return {
-		remove: function ():void {
+		remove: function (): void {
 			this.remove = noop;
 			advised = dispatcher = null;
 		}
 	};
 }
 
-export function before(target:any, methodName:string, advice:Function):core.IHandle {
+export function before(target: any, methodName: string, advice: Function): core.IHandle {
 	return advise(getDispatcher(target, methodName), 'before', advice);
 }
 
-export function on(target:any, methodName:string, advice:Function):core.IHandle {
+export function on(target: any, methodName: string, advice: Function): core.IHandle {
 	return advise(getDispatcher(target, methodName), 'after', advice, true);
 }

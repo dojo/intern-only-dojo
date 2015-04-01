@@ -6,10 +6,11 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-ts');
+	grunt.loadNpmTasks('grunt-tslint');
 	grunt.loadNpmTasks('intern');
 
 	grunt.initConfig({
-		all: [ 'src/**/*.ts', 'typings/tsd.d.ts' ],
+		all: [ 'src/**/*.ts', '!src/loader.ts', 'typings/tsd.d.ts' ],
 
 		clean: {
 			dist: {
@@ -112,7 +113,7 @@ module.exports = function (grunt) {
 					module: 'amd'
 				},
 				outDir: 'dist',
-				src: [ '<%= all %>', '!src/loader.ts' ]
+				src: [ '<%= all %>' ]
 			},
 			amdLoader: {
 				options: {
@@ -133,6 +134,15 @@ module.exports = function (grunt) {
 					module: 'amd'
 				},
 				src: [ 'tests/**/*.ts' ]
+			}
+		},
+
+		tslint: {
+			options: {
+				configuration: grunt.file.readJSON('tslint.json')
+			},
+			dojo: {
+				src: [ '<%= all %>' ]
 			}
 		}
 	});
@@ -202,7 +212,7 @@ module.exports = function (grunt) {
 		'build-amd',
 		'rename:amd'
 	]);
-	grunt.registerTask('test', [ 'ts:tests', 'intern:client' ]);
-	grunt.registerTask('ci', [ 'build-amd', 'test' ]);
+	grunt.registerTask('test', [ 'tslint', 'ts:tests', 'intern:client' ]);
+	grunt.registerTask('ci', [ 'tslint', 'build-amd', 'test' ]);
 	grunt.registerTask('default', [ 'clean', 'build' ]);
 };

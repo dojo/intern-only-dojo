@@ -9,10 +9,10 @@ var readyStates = Object.create(null);
 readyStates.loaded = readyStates.complete = true;
 
 var ready = readyStates[document.readyState],
-	readyQueue:Function[] = [],
+	readyQueue: Function[] = [],
 	processing = false;
 
-function processQueue():void {
+function processQueue(): void {
 	if (processing) {
 		return;
 	}
@@ -26,7 +26,7 @@ function processQueue():void {
 }
 
 if (!ready) {
-	document.addEventListener('DOMContentLoaded', function ():void {
+	document.addEventListener('DOMContentLoaded', function (): void {
 		if (ready) {
 			return;
 		}
@@ -39,17 +39,17 @@ if (!ready) {
 /* tslint:disable:class-name */
 interface domReady extends loader.ILoaderPlugin {
 /* tslint:enable:class-name */
-	(callback:() => void):void;
+	(callback: () => void): void;
 }
 
-var domReady = <domReady> function (callback:(...args:any[]) => void):void {
+var domReady = <domReady> function (callback: (...args: any[]) => void): void {
 	readyQueue.push(callback);
 	if (ready) {
 		processQueue();
 	}
 };
 
-domReady.load = function (resourceId:string, require:loader.IRequire, load:(value?:any) => void):void {
+domReady.load = function (resourceId: string, require: loader.IRequire, load: (value?: any) => void): void {
 	domReady(load);
 };
 

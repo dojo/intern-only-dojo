@@ -3,26 +3,26 @@ import core = require('./interfaces');
 
 module Registry {
 	export interface ITest {
-		(...args:any[]):boolean;
+		(...args: any[]): boolean;
 	}
 }
 
 interface IEntry<ValueT> {
-	test:Registry.ITest;
-	value:ValueT;
+	test: Registry.ITest;
+	value: ValueT;
 }
 
 class Registry<ValueT> {
-	private _entries:IEntry<ValueT>[] = [];
-	private _defaultValue:ValueT;
+	private _entries: IEntry<ValueT>[] = [];
+	private _defaultValue: ValueT;
 
-	constructor(defaultValue?:ValueT) {
+	constructor(defaultValue?: ValueT) {
 		this._defaultValue = defaultValue;
 	}
 
-	match(...args:any[]):ValueT {
-		var entries:IEntry<ValueT>[] = this._entries.slice(0);
-		var entry:IEntry<ValueT>;
+	match(...args: any[]): ValueT {
+		var entries: IEntry<ValueT>[] = this._entries.slice(0);
+		var entry: IEntry<ValueT>;
 
 		for (var i = 0; (entry = entries[i]); ++i) {
 			if (entry.test.apply(null, args)) {
@@ -37,18 +37,18 @@ class Registry<ValueT> {
 		throw new Error('No match found');
 	}
 
-	register(test:Registry.ITest, value:ValueT, first?:boolean):core.IHandle {
+	register(test: Registry.ITest, value: ValueT, first?: boolean): core.IHandle {
 		var entries = this._entries;
-		var entry:IEntry<ValueT> = {
+		var entry: IEntry<ValueT> = {
 			test: test,
 			value: value
 		};
 
-		(<any>entries)[first ? 'unshift' : 'push'](entry);
+		(<any> entries)[first ? 'unshift' : 'push'](entry);
 
 		return {
-			remove: function ():void {
-				this.remove = function ():void {};
+			remove: function (): void {
+				this.remove = function (): void {};
 				lang.pullFromArray(entries, entry);
 				test = value = entries = entry = null;
 			}

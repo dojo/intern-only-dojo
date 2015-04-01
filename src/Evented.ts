@@ -3,10 +3,10 @@ import on = require('./on');
 import aspect = require('./aspect');
 
 class Evented {
-	on(type:string, listener:(...args:any[]) => void):core.IHandle {
-		return on.parse(this, type, listener, this, (target:Evented, type:string):core.IHandle => {
+	on(type: string, listener: (...args: any[]) => void): core.IHandle {
+		return on.parse(this, type, listener, this, (target: Evented, type: string): core.IHandle => {
 			var name = '__on' + type;
-			if (!(<any>this)[name]) {
+			if (!(<any> this)[name]) {
 				Object.defineProperty(this, name, {
 					configurable: true,
 					value: undefined,
@@ -17,9 +17,9 @@ class Evented {
 		});
 	}
 
-	emit(type:string, ...args:any[]):boolean {
+	emit(type: string, ...args: any[]): boolean {
 		type = '__on' + type;
-		var method:Function = (<any>this)[type];
+		var method: Function = (<any> this)[type];
 		if (method) {
 			return method.apply(this, args);
 		}

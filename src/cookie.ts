@@ -1,6 +1,6 @@
 import string = require('./string');
 
-declare var exports:any;
+declare var exports: any;
 
 var longAgo = new Date(1970, 0, 1).toUTCString();
 
@@ -12,11 +12,11 @@ export interface IOptions {
 	secure?: boolean;
 }
 
-function createCookieOptions(options:IOptions):string {
+function createCookieOptions(options: IOptions): string {
 	var optionsString = '';
 
 	for (var key in options) {
-		var value:any = (<any>options)[key];
+		var value: any = (<any> options)[key];
 
 		if (key === 'maxAge') {
 			key = 'max-age';
@@ -50,21 +50,21 @@ Object.defineProperty(exports, 'length', {
 	configurable: true
 });
 
-export function key(index:number):string {
+export function key(index: number): string {
 	var keyValuePair = document.cookie.split('; ', index + 1)[index];
 	return keyValuePair ? decodeURIComponent(/^([^=]+)/.exec(keyValuePair)[0]) : null;
 }
 
-export function getItem(key:string):string {
-	var match = new RegExp('(?:^|; )' + string.escapeRegExpString(encodeURIComponent(key)) + '=([^;]*)').exec(document.cookie);
+export function getItem(key: string): string {
+	var match = new RegExp('(?: ^|; )' + string.escapeRegExpString(encodeURIComponent(key)) + '=([^;]*)').exec(document.cookie);
 	return match ? decodeURIComponent(match[1]) : null;
 }
 
-export function setItem(key:string, data:string, options:IOptions = {}):void {
+export function setItem(key: string, data: string, options: IOptions = {}): void {
 	document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(data) + createCookieOptions(options);
 }
 
-export function removeItem(key:string, options?:IOptions):void {
+export function removeItem(key: string, options?: IOptions): void {
 	options = options ? Object.create(options) : {};
 	options.expires = longAgo;
 	document.cookie = encodeURIComponent(key) + '=' + createCookieOptions(options);

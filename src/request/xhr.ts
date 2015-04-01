@@ -3,24 +3,24 @@ import request = require('../request');
 
 module xhr {
 	export interface IRequestOptions extends request.IRequestOptions {
-		blockMainThread?:boolean;
+		blockMainThread?: boolean;
 	}
 
 	export interface IResponse extends request.IResponse {
-		statusText:string;
+		statusText: string;
 	}
 }
 
-function xhr(url:string, options:xhr.IRequestOptions = {}):Promise<xhr.IResponse> {
-	var deferred:Promise.Deferred<xhr.IResponse> = new Promise.Deferred(function (reason:Error):void {
+function xhr(url: string, options: xhr.IRequestOptions = {}): Promise<xhr.IResponse> {
+	var deferred: Promise.Deferred<xhr.IResponse> = new Promise.Deferred(function (reason: Error): void {
 		request && request.abort();
 		throw reason;
 	});
 
 	var request = new XMLHttpRequest();
-	var response:xhr.IResponse = {
+	var response: xhr.IResponse = {
 		data: null,
-		getHeader: function (name:string):string {
+		getHeader: function (name: string): string {
 			return request.getResponseHeader(name);
 		},
 		nativeResponse: request,
@@ -31,8 +31,8 @@ function xhr(url:string, options:xhr.IRequestOptions = {}):Promise<xhr.IResponse
 	};
 
 	if ((!options.user || !options.password) && options.auth) {
-		(function ():void {
-			var auth:string[] = options.auth.split(':');
+		(function (): void {
+			var auth: string[] = options.auth.split(': ');
 			options.user = decodeURIComponent(auth[0]);
 			options.password = decodeURIComponent(auth[1]);
 		})();
@@ -40,11 +40,11 @@ function xhr(url:string, options:xhr.IRequestOptions = {}):Promise<xhr.IResponse
 
 	request.open(options.method, url, !options.blockMainThread, options.user, options.password);
 
-	request.onerror = function (event:ErrorEvent):void {
+	request.onerror = function (event: ErrorEvent): void {
 		deferred.reject(event.error);
 	};
 
-	request.onload = function ():void {
+	request.onload = function (): void {
 		if (options.responseType === 'xml') {
 			response.data = request.responseXML;
 		}
@@ -58,7 +58,7 @@ function xhr(url:string, options:xhr.IRequestOptions = {}):Promise<xhr.IResponse
 		deferred.resolve(response);
 	};
 
-	request.onprogress = function (event:ProgressEvent):void {
+	request.onprogress = function (event: ProgressEvent): void {
 		deferred.progress(event);
 	};
 

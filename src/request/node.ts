@@ -7,58 +7,58 @@ import request = require('../request');
 import urlUtil = require('url');
 
 interface IOptions {
-	agent?:any;
-	auth?:string;
-	headers?:{ [name:string]:string; };
-	host?:string;
-	hostname?:string;
-	localAddress?:string;
-	method?:string;
-	path?:string;
-	port?:number;
-	socketPath?:string;
+	agent?: any;
+	auth?: string;
+	headers?: { [name: string]: string; };
+	host?: string;
+	hostname?: string;
+	localAddress?: string;
+	method?: string;
+	path?: string;
+	port?: number;
+	socketPath?: string;
 }
 
 interface IHttpsOptions extends IOptions {
-	ca?:any;
-	cert?:string;
-	ciphers?:string;
-	key?:string;
-	passphrase?:string;
-	pfx?:any;
-	rejectUnauthorized?:boolean;
-	secureProtocol?:string;
+	ca?: any;
+	cert?: string;
+	ciphers?: string;
+	key?: string;
+	passphrase?: string;
+	pfx?: any;
+	rejectUnauthorized?: boolean;
+	secureProtocol?: string;
 }
 
 module node {
 	export interface INodeRequestOptions extends request.IRequestOptions {
-		agent?:any;
-		ca?:any;
-		cert?:string;
-		ciphers?:string;
-		dataEncoding?:string;
-		followRedirects?:boolean;
-		key?:string;
-		localAddress?:string;
-		passphrase?:string;
-		pfx?:any;
-		proxy?:string;
-		rejectUnauthorized?:boolean;
-		secureProtocol?:string;
-		socketPath?:string;
-		socketOptions?:{
-			keepAlive?:number;
-			noDelay?:boolean;
-			timeout?:number;
+		agent?: any;
+		ca?: any;
+		cert?: string;
+		ciphers?: string;
+		dataEncoding?: string;
+		followRedirects?: boolean;
+		key?: string;
+		localAddress?: string;
+		passphrase?: string;
+		pfx?: any;
+		proxy?: string;
+		rejectUnauthorized?: boolean;
+		secureProtocol?: string;
+		socketPath?: string;
+		socketOptions?: {
+			keepAlive?: number;
+			noDelay?: boolean;
+			timeout?: number;
 		};
-		streamData?:boolean;
-		streamEncoding?:string;
-		streamTarget?:any;
+		streamData?: boolean;
+		streamEncoding?: string;
+		streamTarget?: any;
 	}
 }
 
-function normalizeHeaders(headers:{ [name:string]:string; }):{ [name:string]:string; } {
-	var normalizedHeaders:{ [name:string]:string; } = {};
+function normalizeHeaders(headers: { [name: string]: string; }): { [name: string]: string; } {
+	var normalizedHeaders: { [name: string]: string; } = {};
 	for (var key in headers) {
 		normalizedHeaders[key.toLowerCase()] = headers[key];
 	}
@@ -66,15 +66,15 @@ function normalizeHeaders(headers:{ [name:string]:string; }):{ [name:string]:str
 	return normalizedHeaders;
 }
 
-function node(url:string, options:node.INodeRequestOptions = {}):Promise<request.IResponse> {
-	var deferred:Promise.Deferred<request.IResponse> = new Promise.Deferred(function (reason:Error):void {
+function node(url: string, options: node.INodeRequestOptions = {}): Promise<request.IResponse> {
+	var deferred: Promise.Deferred<request.IResponse> = new Promise.Deferred(function (reason: Error): void {
 		request && request.abort();
 		throw reason;
 	});
-	var promise:request.IRequestPromise = <request.IRequestPromise> deferred.promise;
-	var parsedUrl:urlUtil.Url = urlUtil.parse(options.proxy || url);
+	var promise: request.IRequestPromise = <request.IRequestPromise> deferred.promise;
+	var parsedUrl: urlUtil.Url = urlUtil.parse(options.proxy || url);
 
-	var requestOptions:IHttpsOptions = {
+	var requestOptions: IHttpsOptions = {
 		agent: options.agent,
 		auth: parsedUrl.auth || options.auth,
 		ca: options.ca,
@@ -105,22 +105,22 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 			requestOptions.headers['proxy-authorization'] = 'Basic ' + new Buffer(parsedUrl.auth).toString('base64');
 		}
 
-		(function ():void {
-			var parsedUrl:urlUtil.Url = urlUtil.parse(url);
+		(function (): void {
+			var parsedUrl: urlUtil.Url = urlUtil.parse(url);
 			requestOptions.headers['host'] = parsedUrl.host;
 			requestOptions.auth = parsedUrl.auth || options.auth;
 		})();
 	}
 
 	if (!options.auth && (options.user || options.password)) {
-		requestOptions.auth = encodeURIComponent(options.user || '') + ':' + encodeURIComponent(options.password || '');
+		requestOptions.auth = encodeURIComponent(options.user || '') + ': ' + encodeURIComponent(options.password || '');
 	}
 
 	// TODO: Cast to `any` prevents TS2226 error
-	var request:http.ClientRequest = (parsedUrl.protocol === 'https:' ? <any> https : http).request(requestOptions);
-	var response:request.IResponse = {
+	var request: http.ClientRequest = (parsedUrl.protocol === 'https: ' ? <any> https : http).request(requestOptions);
+	var response: request.IResponse = {
 		data: null,
-		getHeader: function (name:string):string {
+		getHeader: function (name: string): string {
 			return (this.nativeResponse && this.nativeResponse.headers[name.toLowerCase()]) || null;
 		},
 		requestOptions: options,
@@ -138,15 +138,15 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 		}
 
 		if ('keepAlive' in options.socketOptions) {
-			var initialDelay:number = options.socketOptions.keepAlive;
+			var initialDelay: number = options.socketOptions.keepAlive;
 			request.setSocketKeepAlive(initialDelay >= 0, initialDelay || 0);
 		}
 	}
 
-	request.once('response', function (nativeResponse:http.ClientResponse):void {
-		var data:any[];
-		var loaded:number = 0;
-		var total:number = +nativeResponse.headers['content-length'];
+	request.once('response', function (nativeResponse: http.ClientResponse): void {
+		var data: any[];
+		var loaded: number = 0;
+		var total: number = +nativeResponse.headers['content-length'];
 
 		response.nativeResponse = nativeResponse;
 		response.statusCode = nativeResponse.statusCode;
@@ -177,24 +177,24 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 		options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
 		if (options.streamTarget) {
 			nativeResponse.pipe(options.streamTarget);
-			options.streamTarget.once('error', function (error:request.IRequestError):void {
+			options.streamTarget.once('error', function (error: request.IRequestError): void {
 				nativeResponse.unpipe(options.streamTarget);
 				request.abort();
 				error.response = response;
 				deferred.reject(error);
 			});
-			options.streamTarget.once('close', function ():void {
+			options.streamTarget.once('close', function (): void {
 				deferred.resolve(response);
 			});
 		}
 
-		nativeResponse.on('data', function (chunk:any):void {
+		nativeResponse.on('data', function (chunk: any): void {
 			options.streamData || data.push(chunk);
 			loaded += typeof chunk === 'string' ? Buffer.byteLength(chunk, options.streamEncoding) : chunk.length;
 			deferred.progress({ type: 'data', chunk: chunk, loaded: loaded, total: total });
 		});
 
-		nativeResponse.once('end', function ():void {
+		nativeResponse.once('end', function (): void {
 			timeout && timeout.remove();
 
 			if (!options.streamData) {
@@ -225,30 +225,30 @@ function node(url:string, options:node.INodeRequestOptions = {}):Promise<request
 	}
 
 	if (options.timeout > 0 && options.timeout !== Infinity) {
-		var timeout:core.IHandle = (function ():core.IHandle {
-			var timer = setTimeout(function ():void {
+		var timeout: core.IHandle = (function (): core.IHandle {
+			var timer = setTimeout(function (): void {
 				var error = new Error('Request timed out after ' + options.timeout + 'ms');
 				error.name = 'RequestTimeoutError';
 				promise.cancel(error);
 			}, options.timeout);
 
 			return {
-				remove: function ():void {
-					this.remove = function ():void {};
+				remove: function (): void {
+					this.remove = function (): void {};
 					clearTimeout(timer);
 				}
 			};
 		})();
 	}
 
-	return promise.catch(function (error:Error):any {
-		var parsedUrl:urlUtil.UrlOptions = urlUtil.parse(url);
+	return promise.catch(function (error: Error): any {
+		var parsedUrl: urlUtil.UrlOptions = urlUtil.parse(url);
 
 		if (parsedUrl.auth) {
 			parsedUrl.auth = '(redacted)';
 		}
 
-		var sanitizedUrl:string = urlUtil.format(parsedUrl);
+		var sanitizedUrl: string = urlUtil.format(parsedUrl);
 
 		error.message = '[' + requestOptions.method + ' ' + sanitizedUrl + '] ' + error.message;
 

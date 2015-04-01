@@ -1,12 +1,12 @@
 export interface IVersion {
-	major?:number;
-	minor?:number;
-	patch?:number;
-	flag?:string;
-	revision?:string;
+	major?: number;
+	minor?: number;
+	patch?: number;
+	flag?: string;
+	revision?: string;
 }
 
-export var version:IVersion = {
+export var version: IVersion = {
 	/**
 	 * Major version. If total version is "1.2.0-beta1", will be 1.
 	 */
@@ -33,7 +33,7 @@ export var version:IVersion = {
 	 */
 	revision: ('$Rev$'.match(/[0-9a-f]{7,}/) || [])[0],
 
-	toString: function ():string {
+	toString: function (): string {
 		var v = this;
 		return v.major + '.' + v.minor + '.' + v.patch +
 			(v.flag ? '-' + v.flag : '') +

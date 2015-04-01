@@ -1,13 +1,13 @@
 import core = require('./interfaces');
 
 interface IQueueItem<T extends Function> {
-	active:boolean;
-	callback:T;
+	active: boolean;
+	callback: T;
 }
 class CallbackQueue<T extends Function> {
-	private _callbacks:IQueueItem<T>[] = [];
+	private _callbacks: IQueueItem<T>[] = [];
 
-	add(callback:T):core.IHandle {
+	add(callback: T): core.IHandle {
 		var _callback = {
 			active: true,
 			callback: callback
@@ -25,10 +25,9 @@ class CallbackQueue<T extends Function> {
 		};
 	}
 
-	drain(...args:any[]):void {
-		var callbacks = this._callbacks,
-			item:IQueueItem<T>,
-			callback:T;
+	drain(...args: any[]): void {
+		var callbacks = this._callbacks;
+		var item: IQueueItem<T>;
 
 		// Any callbacks added after drain is called will be processed
 		// the next time drain is called
