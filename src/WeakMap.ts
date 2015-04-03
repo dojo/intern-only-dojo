@@ -5,13 +5,13 @@ import lang = require('./lang');
 has.add('es6-weak-map', typeof (<any> WeakMap) !== 'undefined');
 
 class WeakMapPolyfill<K, V> implements core.IWeakMap<K, V> {
-	private _name:string = undefined;
-	static length:number = 1;
+	private _name: string = undefined;
+	static length: number = 1;
 
-	constructor(iterable:any) {
+	constructor(iterable: any) {
 		this._name = '__wm' + lang.getUID() + (startId++ + '__');
 		if (iterable && 'forEach' in iterable) {
-			iterable.forEach((item:any, i:number) => {
+			iterable.forEach((item: any, i: number) => {
 				if (Array.isArray(item) && item.length === 2) {
 					this.set(iterable[i][0], iterable[i][1]);
 				}
@@ -22,7 +22,7 @@ class WeakMapPolyfill<K, V> implements core.IWeakMap<K, V> {
 		}
 	}
 
-	set(key:any, value:any):any {
+	set(key: any, value: any): any {
 		var entry = key[this._name];
 		if (entry && entry[0] === key) {
 			entry[1] = value;
@@ -36,26 +36,26 @@ class WeakMapPolyfill<K, V> implements core.IWeakMap<K, V> {
 		return this;
 	}
 
-	get(key:any):any {
+	get(key: any): any {
 		var entry = key[this._name];
 		return entry && entry[0] === key ? entry[1] : undefined;
 	}
 
-	has(key:any):boolean {
+	has(key: any): boolean {
 		var entry = key[this._name];
 		return Boolean(entry && entry[0] === key && entry[1]);
 	}
 
-	delete(key:any):void {
+	delete(key: any): void {
 		this.set(key, undefined);
 	}
 }
 
 if (!has('es6-weak-map')) {
-	var startId:number = Math.floor(Date.now() % 100000000);
+	var startId: number = Math.floor(Date.now() % 100000000);
 }
 
-var WM:any;
+var WM: any;
 
 WM = has('es6-weak-map') ? WeakMap : WeakMapPolyfill;
 

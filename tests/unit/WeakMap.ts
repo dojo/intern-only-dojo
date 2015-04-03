@@ -1,9 +1,7 @@
-/// <reference path="../intern.d.ts" />
-
 import assert = require('intern/chai!assert');
-import core = require('../../interfaces');
-import has = require('../../has');
-import WeakMap = require('../../WeakMap');
+import core = require('src/interfaces');
+import has = require('src/has');
+import WeakMap = require('src/WeakMap');
 import registerSuite = require('intern!object');
 
 var wm:any,
