@@ -1,16 +1,13 @@
-/// <reference path="../intern.d.ts" />
-
 import assert = require('intern/chai!assert');
-import core = require('../../interfaces');
-import CallbackQueue = require('../../CallbackQueue');
+import CallbackQueue = require('src/CallbackQueue');
 import registerSuite = require('intern!object');
 
-var queue:CallbackQueue<Function>;
+var queue: CallbackQueue<Function>;
 
-interface ISpy extends Function {
-	args?:IArguments;
-	called:boolean;
-	(...args:any[]):any;
+interface Spy {
+	(...args: any[]): any;
+	args?: IArguments;
+	called: boolean;
 }
 
 registerSuite({
@@ -21,10 +18,10 @@ registerSuite({
 	},
 
 	'calls callbacks': function () {
-		var one:ISpy = <any>function () {
+		var one = <Spy> function () {
 			one.called = true;
 		};
-		var two:ISpy = <any>function () {
+		var two = <Spy> function () {
 			two.called = true;
 		};
 
@@ -39,11 +36,11 @@ registerSuite({
 
 	'removes correctly': {
 		'handler after': function () {
-			var one:ISpy = <any>function () {
+			var one = <Spy> function () {
 				one.called = true;
 				twoHandle.remove();
 			};
-			var two:ISpy = <any>function () {
+			var two = <Spy> function () {
 				two.called = true;
 			};
 
@@ -57,10 +54,10 @@ registerSuite({
 		},
 
 		'handler before': function () {
-			var one:ISpy = <any>function () {
+			var one = <Spy> function () {
 				one.called = true;
 			};
-			var two:ISpy = <any>function () {
+			var two = <Spy> function () {
 				two.called = true;
 				oneHandle.remove();
 			};
@@ -76,11 +73,11 @@ registerSuite({
 	},
 
 	'adding during drain': function () {
-		var one:ISpy = <any>function () {
+		var one = <Spy> function () {
 			one.called = true;
 			queue.add(two);
 		};
-		var two:ISpy = <any>function () {
+		var two = <Spy> function () {
 			two.called = true;
 		};
 
@@ -98,8 +95,8 @@ registerSuite({
 	},
 
 	'arguments': function () {
-		var one:ISpy = <any>function () {
-			one.args = arguments;
+		var one = <Spy> function () {
+			one.args = Array.prototype.slice.call(arguments, 0);
 			one.called = true;
 		};
 

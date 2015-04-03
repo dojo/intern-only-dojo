@@ -45,14 +45,17 @@ var internConfig = {
 	// can be used here
 	loader: {
 		// Packages that should be registered with the loader in each testing environment
-		packages: [ { name: 'dojo2', location: '.' } ]
+		packages: [
+			{ name: 'src', location: 'dist-amd' },
+			{ name: 'tests', location: 'tests' }
+		]
 	},
 
 	// Non-functional test suite(s) to run in each browser
-	suites: [ 'dojo2/tests/unit/all' ],
+	suites: [ 'tests/unit/all' ],
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
-	functionalSuites: [ 'dojo2/tests/functional/all' ],
+	functionalSuites: [ 'tests/functional/all' ],
 
 	// A regular expression matching URLs to files that should not be included in code coverage analysis
 	excludeInstrumentation: /^(?:node_modules|tests)\//

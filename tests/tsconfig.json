@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "declaration": false,
+        "module": "amd",
+        "noImplicitAny": true,
+        "removeComments": false,
+        "sourceMap": false,
+        "target": "es5"
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "../typings/tsd.d.ts"
+    ],
+    "files": [
+        "./functional/all.ts",
+        "./intern.ts",
+        "./unit/CallbackQueue.ts",
+        "./unit/DateObject.ts",
+        "./unit/Observable.ts",
+        "./unit/Promise.ts",
+        "./unit/all.ts",
+        "./unit/lang.ts",
+        "./unit/nextTick.ts",
+        "./unit/string.ts",
+        "../typings/tsd.d.ts"
+    ]
+}

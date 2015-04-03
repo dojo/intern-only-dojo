@@ -1,15 +1,13 @@
-/// <reference path="../intern.d.ts" />
-
 import assert = require('intern/chai!assert');
-import nextTick = require('../../nextTick');
+import nextTick = require('src/nextTick');
 import registerSuite = require('intern!object');
 
 registerSuite({
 	name: 'nextTick',
 
 	'async': function () {
-		var dfd = this.async(),
-			foo = 1;
+		var dfd = this.async();
+		var foo = 1;
 
 		nextTick(() => {
 			foo = 2;
@@ -17,14 +15,14 @@ registerSuite({
 
 		setTimeout(dfd.callback(() => {
 			assert.strictEqual(foo, 2);
-		}), 0);
+		}), 20);
 
 		assert.strictEqual(foo, 1);
 	},
 
 	'remove': function () {
-		var dfd = this.async(),
-			called = false;
+		var dfd = this.async();
+		var called = false;
 
 		nextTick(() => {
 			called = true;

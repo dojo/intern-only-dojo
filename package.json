@@ -11,13 +11,14 @@
     "type": "git",
     "url": "https://github.com/dojo/dojo2.git"
   },
-  "scripts": {
-    "prepublish": "support/prepublish.sh"
-  },
   "devDependencies": {
-    "typescript": "1.3.0",
+    "dts-generator": "SitePen/dts-generator#1.2.0",
     "grunt": "0.4.5",
-    "grunt-ts": "2.0.1",
-    "intern": "2.2.1"
+    "grunt-contrib-clean": "0.6.0",
+    "grunt-contrib-copy": "0.8.0",
+    "grunt-ts": "3.0.0",
+    "grunt-tslint": "2.0.0",
+    "intern": "2.2.2",
+    "typescript": "1.4.1"
   }
 }

@@ -2,6 +2,9 @@
 .tscache
 *.js
 *.js.map
+dist
+dist-amd
+dist-cjs
 node_modules
-!/node.js
+!src/node.js
 !/Gruntfile.js

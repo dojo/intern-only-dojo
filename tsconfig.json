@@ -1,0 +1,46 @@
+{
+    "version": "1.4.1",
+    "compilerOptions": {
+        "declaration": false,
+        "module": "amd",
+        "noImplicitAny": true,
+        "outDir": "dist-amd/",
+        "removeComments": false,
+        "sourceMap": true,
+        "target": "es5"
+    },
+    "filesGlob": [
+        "./src/**/*.ts",
+        "./typings/tsd.d.ts"
+    ],
+    "files": [
+        "./src/CallbackQueue.ts",
+        "./src/DateObject.ts",
+        "./src/Evented.ts",
+        "./src/Observable.ts",
+        "./src/Promise.ts",
+        "./src/Registry.ts",
+        "./src/Scheduler.ts",
+        "./src/aspect.ts",
+        "./src/cookie.ts",
+        "./src/dom.ts",
+        "./src/domReady.ts",
+        "./src/has.ts",
+        "./src/interfaces.d.ts",
+        "./src/io-query.ts",
+        "./src/kernel.ts",
+        "./src/lang.ts",
+        "./src/loader.ts",
+        "./src/nextTick.ts",
+        "./src/on.ts",
+        "./src/on/once.ts",
+        "./src/on/pausable.ts",
+        "./src/request.ts",
+        "./src/request/node.ts",
+        "./src/request/xhr.ts",
+        "./src/string.ts",
+        "./src/text.ts",
+        "./src/topic.ts",
+        "./typings/tsd.d.ts"
+    ]
+}
