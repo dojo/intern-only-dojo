@@ -123,7 +123,7 @@ class Observable implements core.IObservable {
 				descriptor.get = oldDescriptor.get;
 
 				if (oldDescriptor.set) {
-					descriptor.set = (value: any) => {
+					descriptor.set = function (value: any) {
 						oldDescriptor.set.apply(this, arguments);
 						var newValue = descriptor.get.call(this);
 
@@ -138,7 +138,7 @@ class Observable implements core.IObservable {
 					return currentValue;
 				};
 				if (oldDescriptor.writable) {
-					descriptor.set = (newValue: any) => {
+					descriptor.set = function (newValue: any) {
 						this._notify(property, newValue, currentValue);
 						currentValue = newValue;
 					};
