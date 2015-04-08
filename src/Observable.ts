@@ -82,7 +82,9 @@ class Observable implements core.IObservable {
 		return lang.isEqual(a, b);
 	}
 
+	/* tslint:disable:no-unused-variable */
 	private _notify<T>(property: string, newValue: T, oldValue: T): void {
+	/* tslint:enable:no-unused-variable */
 		var callbacks = this._callbacks[property];
 		if (!callbacks || !callbacks.length) {
 			return;

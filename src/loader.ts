@@ -234,7 +234,7 @@ export interface IRootRequire extends IRequire {
 					result.push(item);
 
 					if (valueIsMapReplacement && moduleId === '*') {
-						(<IMapRoot>result).star = item[1];
+						(<IMapRoot> result).star = item[1];
 					}
 				}
 

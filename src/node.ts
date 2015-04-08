@@ -1,4 +1,3 @@
-declare var define: any;
 declare var require: any;
 
 var global: any = (function () {
@@ -64,10 +63,10 @@ export function load(id: string, contextRequire: any, load: Function) {
 }
 
 /**
-* Produces a normalized CommonJS module ID to be used by Node.js `require`. Relative IDs are resolved relative
-* to the requesting module’s location in the filesystem and will return an ID with path separators appropriate
-* for the local filesystem.
-*/
+ * Produces a normalized CommonJS module ID to be used by Node.js `require`. Relative IDs are resolved relative
+ * to the requesting module’s location in the filesystem and will return an ID with path separators appropriate
+ * for the local filesystem.
+ */
 export function normalize(id: string, normalize: Function): string {
 	if (id.charAt(0) === '.') {
 		// absolute module IDs need to be generated based on the AMD loader's knowledge of the parent module,
