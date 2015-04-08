@@ -34,5 +34,5 @@ else {
 }
 
 export function load(resourceId: string, require: loader.IRequire, load: (value?: any) => void): void {
-	getText(resourceId, load);
+	getText(require.toUrl(resourceId), load);
 }
