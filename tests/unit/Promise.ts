@@ -161,8 +161,8 @@ registerSuite({
 	'#finally': {
 		'return value ignored when undefined on resolved promise'() {
 			return Promise.resolve(5)
-				.finally(function (): void {})
-				.then(function (value: number) {
+				.finally(function (): number { return undefined; })
+				.then(function (value) {
 					assert.strictEqual(value, 5, 'Value should be passed through when finally does not return non-explicit value');
 				});
 		},
@@ -205,12 +205,12 @@ registerSuite({
 
 		'value from chained promise adopted when defined'() {
 			return Promise.reject(new Error('Oops'))
-				.finally(function (): void {
+				.finally(function () {
 					return Promise.resolve(5);
 				})
-				.then(function (value: number) {
+				.then(function (value) {
 					assert.strictEqual(value, 5, 'Value from chained promise should be used as value');
-				}, function (error: Error) {
+				}, function () {
 					assert(false, 'Error value from original promise should not be passed through');
 				});
 		},
@@ -218,12 +218,12 @@ registerSuite({
 		'error from chained promise adopted when thrown'() {
 			var expected = new Error('Oops');
 			return Promise.resolve()
-				.finally(function (): void {
+				.finally(function () {
 					return Promise.reject(expected);
 				})
 				.then(function () {
 					assert(false, 'Error value from chained finally promise should not result in success');
-				}, function (error: Error) {
+				}, function (error) {
 					assert.strictEqual(error, expected, 'Error from chained promise should be passed through');
 				});
 		}

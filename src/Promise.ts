@@ -133,7 +133,7 @@ class Promise<T> {
 	 * Creates a new promise that is pre-resolved with the given value. If the passed value is already a promise, it
 	 * will be returned as-is.
 	 */
-	static resolve<T>(value: Promise.Thenable<T> | T): Promise<T> {
+	static resolve<T>(value?: Promise.Thenable<T> | T): Promise<T> {
 		if (value instanceof Promise) {
 			return value;
 		}
