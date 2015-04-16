@@ -158,6 +158,77 @@ registerSuite({
 		}
 	},
 
+	'#finally': {
+		'return value ignored when undefined on resolved promise'() {
+			return Promise.resolve(5)
+				.finally(function (): void {})
+				.then(function (value: number) {
+					assert.strictEqual(value, 5, 'Value should be passed through when finally does not return non-explicit value');
+				});
+		},
+
+		'return value ignored when undefined on rejected promise'() {
+			var expected = new Error('Oops');
+			return Promise.reject(expected)
+				.finally(function (): void {
+					return undefined;
+				})
+				.then(function () {
+					assert(false, 'Undefined value from finally should not result in success');
+				}, function (error: Error) {
+					assert.strictEqual(error, expected, 'Error should be passed through');
+				});
+		},
+
+		'return value adopted when defined'() {
+			return Promise.resolve(5)
+				.finally(function () {
+					return 10;
+				})
+				.then(function (value: number) {
+					assert.strictEqual(value, 10, 'Value should be changed when finally returns explicit value');
+				});
+		},
+
+		'error adopted when thrown'() {
+			var expected = new Error('Oops');
+			return Promise.resolve(5)
+				.finally(function () {
+					throw expected;
+				})
+				.then(function () {
+					assert(false, 'Thrown value from finally should not result in success');
+				}, function (error: Error) {
+					assert.strictEqual(error, expected, 'Error value from finally should be used as value');
+				});
+		},
+
+		'value from chained promise adopted when defined'() {
+			return Promise.reject(new Error('Oops'))
+				.finally(function (): void {
+					return Promise.resolve(5);
+				})
+				.then(function (value: number) {
+					assert.strictEqual(value, 5, 'Value from chained promise should be used as value');
+				}, function (error: Error) {
+					assert(false, 'Error value from original promise should not be passed through');
+				});
+		},
+
+		'error from chained promise adopted when thrown'() {
+			var expected = new Error('Oops');
+			return Promise.resolve()
+				.finally(function (): void {
+					return Promise.reject(expected);
+				})
+				.then(function () {
+					assert(false, 'Error value from chained finally promise should not result in success');
+				}, function (error: Error) {
+					assert.strictEqual(error, expected, 'Error from chained promise should be passed through');
+				});
+		}
+	},
+
 	'.all': {
 		'empty array': function () {
 			var dfd = this.async();

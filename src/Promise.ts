@@ -432,10 +432,35 @@ class Promise<T> {
 
 	/**
 	 * Adds a callback to the promise to be invoked regardless of whether or not the asynchronous operation completed
-	 * successfully.
+	 * successfully. The callback can throw or return a new value to replace the original value, or if it returns
+	 * undefined, the original value or error will be passed through.
 	 */
-	finally<U>(onFulfilledOrRejected: (value?: T | Error) => Promise.Thenable<U> | U): Promise<U> {
-		return this.then<U>(onFulfilledOrRejected, onFulfilledOrRejected);
+	finally<U>(onFulfilledOrRejected: () => Promise.Thenable<U> | U): Promise<U> {
+		function getFinalValue(defaultCallback: () => U): Promise.Thenable<U> | U {
+			var returnValue = onFulfilledOrRejected();
+
+			if (returnValue === undefined) {
+				return defaultCallback();
+			}
+			else if (returnValue && (<Promise.Thenable<U>> returnValue).then) {
+				return (<Promise.Thenable<U>> returnValue).then(function (returnValue) {
+					return returnValue !== undefined ? returnValue : defaultCallback();
+				});
+			}
+			else {
+				return returnValue;
+			}
+		}
+
+		return this.then<U>(function (value) {
+			return getFinalValue(function (): any {
+				return value;
+			});
+		}, function (error) {
+			return getFinalValue(function (): any {
+				throw error;
+			});
+		});
 	}
 
 	/**

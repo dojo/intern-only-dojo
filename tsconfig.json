@@ -32,6 +32,7 @@
         "./src/lang.ts",
         "./src/loader.ts",
         "./src/nextTick.ts",
+        "./src/node.ts",
         "./src/on.ts",
         "./src/on/once.ts",
         "./src/on/pausable.ts",
