@@ -1,10 +1,10 @@
 {
-    "version": "1.4.1",
+    "version": "1.5.0",
     "compilerOptions": {
         "declaration": false,
-        "module": "amd",
+        "module": "camd",
         "noImplicitAny": true,
-        "outDir": "dist-amd/",
+        "outDir": "dist/",
         "removeComments": false,
         "sourceMap": true,
         "target": "es5"

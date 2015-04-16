@@ -15,12 +15,6 @@ module.exports = function (grunt) {
 		clean: {
 			dist: {
 				src: [ 'dist/' ]
-			},
-			amd: {
-				src: [ 'dist-amd/' ]
-			},
-			cjs: {
-				src: [ 'dist-cjs/' ]
 			}
 		},
 
@@ -78,14 +72,6 @@ module.exports = function (grunt) {
 				cwd: 'dist/',
 				src: [ '**/*.js.map' ],
 				dest: 'dist/_debug/'
-			},
-			amd: {
-				src: [ 'dist/' ],
-				dest: 'dist-amd/'
-			},
-			cjs: {
-				src: [ 'dist/' ],
-				dest: 'dist-cjs/'
 			}
 		},
 
@@ -108,26 +94,19 @@ module.exports = function (grunt) {
 				sourceMap: true,
 				target: 'es5'
 			},
-			amd: {
+			dojo: {
 				options: {
-					module: 'amd'
+					module: 'camd'
 				},
 				outDir: 'dist',
-				src: [ '<%= all %>' ]
+				src: [ '<%= all %>', '!src/loader.ts' ]
 			},
-			amdLoader: {
+			loader: {
 				options: {
 					module: 'commonjs'
 				},
 				outDir: 'dist',
-				src: [ 'src/loader.ts' ]
-			},
-			cjs: {
-				options: {
-					module: 'commonjs'
-				},
-				outDir: 'dist',
-				src: [ '<%= all %>' ]
+				src: [ 'src/loader.ts', 'typings/tsd.d.ts' ]
 			},
 			tests: {
 				options: {
@@ -189,7 +168,9 @@ module.exports = function (grunt) {
 		grunt.log.writeln('Moved ' + this.files.length + ' files');
 	});
 
-	grunt.registerTask('_process-build', [
+	grunt.registerTask('build', [
+		'ts:loader',
+		'ts:dojo',
 		'copy:typings',
 		'copy:sourceForDebugging',
 		'copy:staticFiles',
@@ -197,24 +178,7 @@ module.exports = function (grunt) {
 		'rename:sourceMaps',
 		'dts:dojo'
 	]);
-	grunt.registerTask('build-cjs', [
-		'clean:cjs',
-		'ts:cjs',
-		'_process-build',
-		'rename:cjs'
-	]);
-	grunt.registerTask('build-amd', [
-		'clean:amd',
-		'ts:amdLoader',
-		'ts:amd',
-		'_process-build',
-		'rename:amd'
-	]);
-	grunt.registerTask('build', [
-		'build-cjs',
-		'build-amd'
-	]);
 	grunt.registerTask('test', [ 'ts:tests', 'intern:client' ]);
-	grunt.registerTask('ci', [ 'tslint', 'build-amd', 'test' ]);
+	grunt.registerTask('ci', [ 'tslint', 'build', 'test' ]);
 	grunt.registerTask('default', [ 'clean', 'build' ]);
 };
