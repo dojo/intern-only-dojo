@@ -353,7 +353,7 @@ export interface IRootRequire extends IRequire {
 		var module: IModule;
 		if (typeof a1 === 'string') {
 			module = getModule(a1, referenceModule);
-			if (module.executed !== true) {
+			if (module.executed !== true && module.executed !== EXECUTING) {
 				throw new Error('Attempt to require unloaded module ' + module.mid);
 			}
 			// Assign the result of the module to `module`
