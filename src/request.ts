@@ -1,4 +1,4 @@
-/// <amd-dependency path="./has!host-browser?./request/xhr: host-node?./request/node" />
+/// <amd-dependency path="./has!host-browser?./request/xhr:host-node?./request/node" />
 declare var require: (moduleId: string) => any;
 
 import has = require('./has');
