@@ -15,6 +15,9 @@ module.exports = function (grunt) {
 		clean: {
 			dist: {
 				src: [ 'dist/' ]
+			},
+			loaderTmp: {
+				src: [ 'dist-loader-tmp/' ]
 			}
 		},
 
@@ -36,6 +39,12 @@ module.exports = function (grunt) {
 				cwd: 'typings/',
 				src: [ '**/*.d.ts', '!tsd.d.ts' ],
 				dest: 'dist/typings/'
+			},
+			loader: {
+				expand: true,
+				cwd: 'dist-loader-tmp/',
+				src: [ 'loader.js' ],
+				dest: 'dist/'
 			}
 		},
 
@@ -105,7 +114,7 @@ module.exports = function (grunt) {
 				options: {
 					module: 'commonjs'
 				},
-				outDir: 'dist',
+				outDir: 'dist-loader-tmp',
 				src: [ 'src/loader.ts', 'typings/tsd.d.ts' ]
 			},
 			tests: {
@@ -171,6 +180,8 @@ module.exports = function (grunt) {
 	grunt.registerTask('build', [
 		'ts:loader',
 		'ts:dojo',
+		'copy:loader',
+		'clean:loaderTmp',
 		'copy:typings',
 		'copy:sourceForDebugging',
 		'copy:staticFiles',
