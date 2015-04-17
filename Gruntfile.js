@@ -43,7 +43,7 @@ module.exports = function (grunt) {
 			loader: {
 				expand: true,
 				cwd: 'dist-loader-tmp/',
-				src: [ 'loader.js' ],
+				src: [ 'loader.js', '_debug/loader.js.map' ],
 				dest: 'dist/'
 			}
 		},
@@ -112,6 +112,7 @@ module.exports = function (grunt) {
 			},
 			loader: {
 				options: {
+					mapRoot: '../dist-loader-tmp/_debug',
 					module: 'commonjs'
 				},
 				outDir: 'dist-loader-tmp',
