@@ -848,6 +848,7 @@ export interface IRootRequire extends IRequire {
 			node.addEventListener('load', handler, false);
 			node.addEventListener('error', handler, false);
 
+			(<any> node).crossOrigin = 'anonymous';
 			node.charset = 'utf-8';
 			node.src = url;
 			document.head.appendChild(node);
