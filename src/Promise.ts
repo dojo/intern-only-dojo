@@ -66,7 +66,7 @@ class Promise<T> {
 					}
 				});
 
-				return values;
+				throw reason;
 			});
 
 			function fulfill(key: string, value: any) {
@@ -282,13 +282,16 @@ class Promise<T> {
 						settle.bind(null, Promise.State.REJECTED)
 					);
 					isChained = true;
+
+					// If this promise resolution has been chained to another promise A, and then someone calls `then`
+					// on this promise to create promise B, then calls `cancel` on promise B, it needs to propagate
+					// back to cancel the chained promise A
+					canceler = value.cancel;
 				}
 				catch (error) {
 					settle(Promise.State.REJECTED, error);
 					return;
 				}
-
-				this.cancel = value.cancel;
 			}
 			else {
 				settle(newState, value);
@@ -316,21 +319,38 @@ class Promise<T> {
 			});
 		}
 
-		this.cancel = function (reason) {
-			if (isResolved() || !canceler) {
+		this.cancel = function (reason?) {
+			// Settled promises are 100% finished and cannot be cancelled
+			if (state !== Promise.State.PENDING) {
 				return;
 			}
 
 			if (!reason) {
-				reason = new Error();
+				reason = new Error('Cancelled');
 				reason.name = 'CancelError';
 			}
 
+			// The promise is non-cancellable so just reject it for consistency (this will at least bypass any more
+			// code that would run in chained success callbacks)
+			if (!canceler) {
+				settle(Promise.State.REJECTED, reason);
+				return Promise.reject(reason);
+			}
+
 			try {
+				// The canceller has a last opportunity to fulfill the promise with some data (for example something
+				// from an outdated local cache), or else should throw the reason
 				resolve(Promise.State.FULFILLED, canceler(reason));
 			}
 			catch (error) {
 				settle(Promise.State.REJECTED, error);
+
+				// If a promise was chained so another promise adopted this `this.cancel` as its canceler, we need to
+				// provide a rejection, otherwise that other promise will believe the cancelation resulted in a
+				// successful value of `undefined`
+				// TODO: There should be a better way to do this
+				// TODO: Test
+				return Promise.reject(error);
 			}
 		};
 
@@ -343,10 +363,10 @@ class Promise<T> {
 				setCanceler(function (reason) {
 					if (canceler) {
 						resolve(canceler(reason));
-						return;
 					}
-
-					throw reason;
+					else {
+						throw reason;
+					}
 				});
 
 				whenProgress(function (data) {
@@ -397,7 +417,9 @@ class Promise<T> {
 					}
 				},
 				function (value) {
-					canceler = value;
+					if (!isResolved()) {
+						canceler = value;
+					}
 				}
 			);
 		}
