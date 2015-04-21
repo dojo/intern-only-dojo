@@ -581,7 +581,11 @@ export interface IRootRequire extends IRequire {
 			// add properties to it. When the module finally runs its factory, the factory can
 			// read/write/replace this object. Notice that so long as the object isn't replaced, any
 			// reference taken earlier while walking the deps list is still valid.
-			if (has('loader-debug-circular-dependencies') && module.deps.indexOf(cjsExportsModule) === -1) {
+			if (
+				has('loader-debug-circular-dependencies') &&
+				module.deps.indexOf(cjsExportsModule) === -1 &&
+				typeof console !== 'undefined'
+			) {
 				console.warn('Circular dependency: ' + circularTrace.concat(module.mid).join(' -> '));
 			}
 
