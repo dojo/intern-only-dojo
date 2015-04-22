@@ -11,11 +11,13 @@ usage() {
 	exit 1
 }
 
+ORIGINAL_REVISION=$(git rev-parse --abbrev-ref HEAD)
+
 if [ "$1" == "--help" ]; then
 	usage
 	exit 0
 elif [ "$1" == "" ]; then
-	BRANCH="master"
+	BRANCH=$ORIGINAL_REVISION
 else
 	BRANCH=$1
 fi
@@ -28,10 +30,10 @@ if [ "$2" != "" ]; then
 fi
 
 ROOT_DIR=$(cd $(dirname $0) && cd .. && pwd)
-BUILD_DIR="$ROOT_DIR/build"
+BUILD_DIR="$ROOT_DIR/dist"
 
-if [ -d "$BUILD_DIR" ]; then
-	echo "Existing build directory detected at $BUILD_DIR"
+if [ $(git status --porcelain |grep '^.. src/' |wc -l) -gt 0 ]; then
+	echo "Uncommitted changes exist in your current source directory"
 	echo "Aborted."
 	exit 1
 fi
@@ -39,9 +41,9 @@ fi
 echo "This is an internal Dojo release script!"
 echo -n "Press 'y' to create a new Dojo release from branch $BRANCH"
 if [ "$VERSION" == "" ]; then
-	echo "."
+	echo "\nto npm tag $NPM_TAG."
 else
-	echo -e "\nwith version override $VERSION."
+	echo -e "\nwith version override $VERSION to npm tag $NPM_TAG."
 fi
 echo "(You can abort pushing upstream later on if something goes wrong.)"
 read -s -n 1
@@ -52,10 +54,6 @@ if [ "$REPLY" != "y" ]; then
 fi
 
 cd "$ROOT_DIR"
-mkdir "$BUILD_DIR"
-git clone --recursive git@github.com:dojo/dojo2.git "$BUILD_DIR"
-
-cd "$BUILD_DIR"
 
 # Store the newly created tags and all updated branches outside of the loop so we can push/publish them all at once
 # at the end instead of having to guess that the second loop will run successfully after the first one
@@ -64,7 +62,9 @@ PUSH_BRANCHES="$BRANCH"
 
 echo -e "\nBuilding $BRANCH branch...\n"
 
-git checkout $BRANCH
+if [ "$BRANCH" != "$ORIGINAL_REVISION" ]; then
+	git checkout $BRANCH
+fi
 
 # Get the version number for this release from package.json
 if [ "$VERSION" == "" ]; then
@@ -106,11 +106,11 @@ TAG_VERSION=$VERSION
 RELEASE_TAG="$TAG_VERSION"
 
 # At this point:
-# $VERSION is the version of Dojo that is being released;
+# $VERSION is the version of Mayhem that is being released;
 # $TAG_VERSION is the name that will be used for the Git tag for the release
-# $PRE_VERSION is the next pre-release version of Dojo that will be set on the original branch after tagging
+# $PRE_VERSION is the next pre-release version of Mayhem that will be set on the original branch after tagging
 # $MAKE_BRANCH is the name of the new minor release branch that should be created (if this is not a patch release)
-# $BRANCH_VERSION is the pre-release version of Dojo that will be set on the minor release branch
+# $BRANCH_VERSION is the pre-release version of Mayhem that will be set on the minor release branch
 
 # Something is messed up and this release has already happened
 if [ $(git tag |grep -c "^$TAG_VERSION$") -gt 0 ]; then
@@ -119,43 +119,17 @@ if [ $(git tag |grep -c "^$TAG_VERSION$") -gt 0 ]; then
 fi
 
 # Set the package version to release version
-sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
-
-# Fix the Git-based dependencies to specific commit IDs
-echo -e "\nFixing dependency commits...\n"
-for DEP in dojo; do
-	DEP_URL=$(grep -o "\"$DEP\": \"[^\"]*\"" package.json |grep -o 'https://[^"]*' |sed -e 's/\/archive.*//')
-	COMMIT=$(grep -o "\"$DEP\": \"[^\"]*\"" package.json |grep -o 'https://[^"]*' |sed -e 's/.*archive\/\(.*\)\.tar\.gz/\1/')
-	if [ "$DEP_URL" != "" ]; then
-		if [[ "$COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
-			echo -e "\nDependency $DEP is already fixed to $COMMIT\n"
-		else
-			mkdir "$BUILD_DIR/.dep"
-			git clone --single-branch --depth 1 --branch=$COMMIT "$DEP_URL.git" "$BUILD_DIR/.dep"
-			cd "$BUILD_DIR/.dep"
-			COMMIT=$(git log -n 1 --format='%H')
-			cd "$BUILD_DIR"
-			rm -rf "$BUILD_DIR/.dep"
-			DEP_URL=$(echo $DEP_URL |sed -e 's/[\/&]/\\&/g')
-			echo -e "\nFixing dependency $DEP to commit $COMMIT...\n"
-			sed -i -e "s/\(\"$DEP\":\) \"[^\"]*\"/\1 \"$DEP_URL\/archive\/$COMMIT.tar.gz\"/" package.json
-		fi
-	fi
-done
+sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json bower.json
 
 # Commit the new release to Git
-git commit -m "Updating metadata for $VERSION" package.json
+git commit -m "Updating metadata for $VERSION" package.json bower.json
 git tag -a -m "Release $VERSION" $TAG_VERSION
 
-# Check out the previous package.json to get rid of the fixed dependencies
-git checkout HEAD^ package.json
-git reset package.json
-
 # Set the package version to next pre-release version
-sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$PRE_VERSION\"/" package.json
+sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$PRE_VERSION\"/" package.json bower.json
 
 # Commit the pre-release to Git
-git commit -m "Updating source version to $PRE_VERSION" package.json
+git commit -m "Updating source version to $PRE_VERSION" package.json bower.json
 
 # If this is a major/minor release, we also create a new branch for it
 if [ "$MAKE_BRANCH" != "" ]; then
@@ -163,15 +137,28 @@ if [ "$MAKE_BRANCH" != "" ]; then
 	git checkout -b $MAKE_BRANCH $TAG_VERSION
 
 	# Set the package version to the next patch pre-release version
-	sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$BRANCH_VERSION\"/" package.json
+	sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$BRANCH_VERSION\"/" package.json bower.json
 
 	# Commit the pre-release to Git
-	git commit -m "Updating source version to $BRANCH_VERSION" package.json
+	git commit -m "Updating source version to $BRANCH_VERSION" package.json bower.json
 
 	# Store the branch as one that needs to be pushed when we are ready to deploy the release
 	PUSH_BRANCHES="$PUSH_BRANCHES $MAKE_BRANCH"
 fi
 
+# Create pre-built release for bower & npm
+git checkout $TAG_VERSION
+grunt clean
+#TODO: Re-enable bower
+# git clone -n git@github.com:SitePen/mayhem-bower.git "$BUILD_DIR"
+grunt build
+cd "$BUILD_DIR"
+#TODO: Re-enable bower
+# git add -A
+# git commit -m "Update pre-built release version $VERSION"
+# git tag -a -m "Release $VERSION" $TAG_VERSION
+
+cd "$ROOT_DIR"
 echo -e "\nDone!\n"
 
 echo "Please confirm packaging success, then press 'y', ENTER to publish to npm, push"
@@ -183,16 +170,21 @@ if [ "$REPLY" != "y" ]; then
 	exit 0
 fi
 
+#TODO: Re-enable bower
+#for BRANCH in $PUSH_BRANCHES; do
+#	git push origin $BRANCH
+#done
+#
+#git push origin --tags
+
+cd "$BUILD_DIR"
+npm publish --tag $NPM_TAG
 for BRANCH in $PUSH_BRANCHES; do
 	git push origin $BRANCH
 done
-
 git push origin --tags
 
-git checkout $RELEASE_TAG
-npm publish --tag $NPM_TAG
-
 cd "$ROOT_DIR"
-rm -rf "$BUILD_DIR"
+git checkout "$ORIGINAL_REVISION"
 
 echo -e "\nAll done! Yay!"
