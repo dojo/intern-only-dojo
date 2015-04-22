@@ -105,7 +105,7 @@ module.exports = function (grunt) {
 			},
 			dojo: {
 				options: {
-					module: 'camd'
+					module: 'umd'
 				},
 				outDir: 'dist',
 				src: [ '<%= all %>', '!src/loader.ts' ]
