@@ -1,4 +1,5 @@
 import assert = require('intern/chai!assert');
+import nextTick = require('src/nextTick');
 import Promise = require('src/Promise');
 import registerSuite = require('intern!object');
 
@@ -155,6 +156,175 @@ registerSuite({
 					assert.strictEqual(err, error);
 				}));
 			}
+		}
+	},
+
+	'#finally': {
+		'return value ignored when undefined on resolved promise'() {
+			return Promise.resolve(5)
+				.finally(function (): number { return undefined; })
+				.then(function (value) {
+					assert.strictEqual(value, 5, 'Value should be passed through when finally does not return non-explicit value');
+				});
+		},
+
+		'return value ignored when undefined on rejected promise'() {
+			var expected = new Error('Oops');
+			return Promise.reject(expected)
+				.finally(function (): void {
+					return undefined;
+				})
+				.then(function () {
+					assert(false, 'Undefined value from finally should not result in success');
+				}, function (error: Error) {
+					assert.strictEqual(error, expected, 'Error should be passed through');
+				});
+		},
+
+		'return value adopted when defined'() {
+			return Promise.resolve(5)
+				.finally(function () {
+					return 10;
+				})
+				.then(function (value: number) {
+					assert.strictEqual(value, 10, 'Value should be changed when finally returns explicit value');
+				});
+		},
+
+		'error adopted when thrown'() {
+			var expected = new Error('Oops');
+			return Promise.resolve(5)
+				.finally(function () {
+					throw expected;
+				})
+				.then(function () {
+					assert(false, 'Thrown value from finally should not result in success');
+				}, function (error: Error) {
+					assert.strictEqual(error, expected, 'Error value from finally should be used as value');
+				});
+		},
+
+		'value from chained promise adopted when defined'() {
+			return Promise.reject(new Error('Oops'))
+				.finally(function () {
+					return Promise.resolve(5);
+				})
+				.then(function (value) {
+					assert.strictEqual(value, 5, 'Value from chained promise should be used as value');
+				}, function () {
+					assert(false, 'Error value from original promise should not be passed through');
+				});
+		},
+
+		'error from chained promise adopted when thrown'() {
+			var expected = new Error('Oops');
+			return Promise.resolve()
+				.finally(function () {
+					return Promise.reject(expected);
+				})
+				.then(function () {
+					assert(false, 'Error value from chained finally promise should not result in success');
+				}, function (error) {
+					assert.strictEqual(error, expected, 'Error from chained promise should be passed through');
+				});
+		}
+	},
+
+	'#cancel': {
+		'basic cancel': function () {
+			var expectedReason = new Error('Oops');
+
+			var promise = new Promise(function (resolve, reject, progress, setCanceler) {
+				setCanceler(function (reason) {
+					assert.strictEqual(reason, expectedReason);
+					return 'OK';
+				});
+			});
+
+			promise.cancel(expectedReason);
+
+			return promise.then(function (value) {
+				assert.strictEqual(value, 'OK');
+			});
+		},
+
+		'chained cancel': function () {
+			var expectedReason = new Error('Oops');
+
+			var promise = new Promise(function (resolve, reject, progress, setCanceler) {
+				setCanceler(function (reason) {
+					assert.strictEqual(reason, expectedReason);
+					return 'OK';
+				});
+			}).then(function () {});
+
+			promise.cancel(expectedReason);
+
+			return promise.then(function (value) {
+				assert.strictEqual(value, 'OK');
+			});
+		},
+
+		'chained cancel to resolved unsettled promise': function () {
+			var expectedReason = new Error('Oops');
+
+			var chainedPromise = new Promise(function (resolve, reject, progress, setCanceler) {
+				setCanceler(function (reason) {
+					assert.strictEqual(reason, expectedReason);
+					return 'OK';
+				});
+			});
+
+			var promise = new Promise(function (resolve, reject, progress, setCanceler) {
+				setCanceler(function (reason) {
+					throw new Error('Original cancel should not be called since it is resolved');
+				});
+
+				resolve('NOT OK');
+			}).then(function () {
+				return chainedPromise;
+			});
+
+			nextTick(function () {
+				promise.cancel(expectedReason);
+			});
+
+			return promise.then(function (value) {
+				assert.strictEqual(value, 'OK');
+			});
+		},
+
+		'chained cancel to intermediate': function () {
+			this.timeout = 1000;
+
+			var expectedReason = new Error('Oops');
+
+			var chainedPromise = new Promise(function (resolve, reject, progress, setCanceler) {
+				setCanceler(function (reason) {
+					assert.strictEqual(reason, expectedReason);
+					return 'OK';
+				});
+			});
+
+			var promise = new Promise(function (resolve, reject, progress, setCanceler) {
+				setCanceler(function (reason) {
+					throw new Error('Original cancel should not be called since it is resolved');
+				});
+
+				resolve('NOT OK');
+			}).then(function () {
+				return Promise.resolve('NOT OK').then(function () {
+					nextTick(function () {
+						promise.cancel(expectedReason);
+					});
+
+					return chainedPromise;
+				});
+			});
+
+			return promise.then(function (value) {
+				assert.strictEqual(value, 'OK');
+			});
 		}
 	},
 

@@ -228,13 +228,13 @@ export interface IRootRequire extends IRequire {
 					var item = <IMapItem> {
 						0: moduleId,
 						1: valueIsMapReplacement ? computeMapProg(value) : value,
-						2: new RegExp('^' + moduleId.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&') + '(?: \/|$)'),
+						2: new RegExp('^' + moduleId.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&') + '(?:\/|$)'),
 						3: moduleId.length
 					};
 					result.push(item);
 
 					if (valueIsMapReplacement && moduleId === '*') {
-						(<IMapRoot>result).star = item[1];
+						(<IMapRoot> result).star = item[1];
 					}
 				}
 
@@ -324,7 +324,7 @@ export interface IRootRequire extends IRequire {
 
 	function mix(target: {}, source: {}): {} {
 		for (var key in source) {
-			(<any>target)[key] = (<any>source)[key];
+			(<any> target)[key] = (<any> source)[key];
 		}
 		return target;
 	}
@@ -353,7 +353,7 @@ export interface IRootRequire extends IRequire {
 		var module: IModule;
 		if (typeof a1 === 'string') {
 			module = getModule(a1, referenceModule);
-			if (module.executed !== true) {
+			if (module.executed !== true && module.executed !== EXECUTING) {
 				throw new Error('Attempt to require unloaded module ' + module.mid);
 			}
 			// Assign the result of the module to `module`
@@ -481,10 +481,10 @@ export interface IRootRequire extends IRequire {
 				pack: pack,
 				url: compactPath(
 					// absolute urls should not be prefixed with baseUrl
-					(/^(?: \/|\w+: )/.test(url) ? '' : baseUrl) +
+					(/^(?:\/|\w+:)/.test(url) ? '' : baseUrl) +
 					url +
 					// urls with a javascript extension should not have another one added
-					(/\.js(?: \?[^?]*)?$/.test(url) ? '' : '.js')
+					(/\.js(?:\?[^?]*)?$/.test(url) ? '' : '.js')
 				)
 			};
 		}
@@ -581,7 +581,11 @@ export interface IRootRequire extends IRequire {
 			// add properties to it. When the module finally runs its factory, the factory can
 			// read/write/replace this object. Notice that so long as the object isn't replaced, any
 			// reference taken earlier while walking the deps list is still valid.
-			if (has('loader-debug-circular-dependencies') && module.deps.indexOf(cjsExportsModule) === -1) {
+			if (
+				has('loader-debug-circular-dependencies') &&
+				module.deps.indexOf(cjsExportsModule) === -1 &&
+				typeof console !== 'undefined'
+			) {
 				console.warn('Circular dependency: ' + circularTrace.concat(module.mid).join(' -> '));
 			}
 
@@ -635,7 +639,7 @@ export interface IRootRequire extends IRequire {
 
 			// if result defines load, just assume it's a plugin; harmless if the assumption is wrong
 			result && result.load && [ 'dynamic', 'normalize', 'load' ].forEach(function (key: string): void {
-				(<any>module)[key] = (<any>result)[key];
+				(<any> module)[key] = (<any> result)[key];
 			});
 
 			// for plugins, resolve the loadQ
@@ -746,7 +750,7 @@ export interface IRootRequire extends IRequire {
 				consumePendingCacheInsert(module);
 
 				if (has('loader-ie9-compat') && node) {
-					defArgs = (<any>node).defArgs;
+					defArgs = (<any> node).defArgs;
 				}
 
 				// non-amd module
@@ -844,6 +848,7 @@ export interface IRootRequire extends IRequire {
 			node.addEventListener('load', handler, false);
 			node.addEventListener('error', handler, false);
 
+			(<any> node).crossOrigin = 'anonymous';
 			node.charset = 'utf-8';
 			node.src = url;
 			document.head.appendChild(node);
@@ -863,7 +868,6 @@ export interface IRootRequire extends IRequire {
 		injectUrl = function (url: string, callback: (node?: HTMLScriptElement) => void, module: IModule, parent?: IModule): void {
 			fs.readFile(url, 'utf8', function (error: Error, data: string): void {
 				if (error) {
-					console.log(module, parent);
 					throw new Error('Failed to load module ' + module.mid + ' from ' + url + (parent ? ' (parent: ' + parent.mid + ')' : ''));
 				}
 
@@ -884,10 +888,10 @@ export interface IRootRequire extends IRequire {
 	has.add('loader-debug-internals', true);
 	if (has('loader-debug-internals')) {
 		req.inspect = function (name: string): any {
-			/* tslint: disable: no-eval */
+			/* tslint:disable:no-eval */
 			// TODO: Should this use console.log so people do not get any bright ideas about using this in apps?
 			return eval(name);
-			/* tslint: enable: no-eval */
+			/* tslint:enable:no-eval */
 		};
 	}
 
@@ -965,9 +969,9 @@ export interface IRootRequire extends IRequire {
 		}
 
 		if (has('loader-ie9-compat')) {
-			for (var i = document.scripts.length - 1, script: HTMLScriptElement; (script = <HTMLScriptElement>document.scripts[i]); --i) {
+			for (var i = document.scripts.length - 1, script: HTMLScriptElement; (script = <HTMLScriptElement> document.scripts[i]); --i) {
 				if (script.readyState === 'interactive') {
-					(<any>script).defArgs = [ deps, factory ];
+					(<any> script).defArgs = [ deps, factory ];
 					break;
 				}
 			}

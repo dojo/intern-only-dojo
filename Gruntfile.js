@@ -16,11 +16,8 @@ module.exports = function (grunt) {
 			dist: {
 				src: [ 'dist/' ]
 			},
-			amd: {
-				src: [ 'dist-amd/' ]
-			},
-			cjs: {
-				src: [ 'dist-cjs/' ]
+			loaderTmp: {
+				src: [ 'dist-loader-tmp/' ]
 			}
 		},
 
@@ -42,6 +39,12 @@ module.exports = function (grunt) {
 				cwd: 'typings/',
 				src: [ '**/*.d.ts', '!tsd.d.ts' ],
 				dest: 'dist/typings/'
+			},
+			loader: {
+				expand: true,
+				cwd: 'dist-loader-tmp/',
+				src: [ 'loader.js', '_debug/loader.js.map' ],
+				dest: 'dist/'
 			}
 		},
 
@@ -78,14 +81,6 @@ module.exports = function (grunt) {
 				cwd: 'dist/',
 				src: [ '**/*.js.map' ],
 				dest: 'dist/_debug/'
-			},
-			amd: {
-				src: [ 'dist/' ],
-				dest: 'dist-amd/'
-			},
-			cjs: {
-				src: [ 'dist/' ],
-				dest: 'dist-cjs/'
 			}
 		},
 
@@ -108,26 +103,20 @@ module.exports = function (grunt) {
 				sourceMap: true,
 				target: 'es5'
 			},
-			amd: {
+			dojo: {
 				options: {
-					module: 'amd'
+					module: 'camd'
 				},
 				outDir: 'dist',
-				src: [ '<%= all %>' ]
+				src: [ '<%= all %>', '!src/loader.ts' ]
 			},
-			amdLoader: {
+			loader: {
 				options: {
+					mapRoot: '../dist-loader-tmp/_debug',
 					module: 'commonjs'
 				},
-				outDir: 'dist',
-				src: [ 'src/loader.ts' ]
-			},
-			cjs: {
-				options: {
-					module: 'commonjs'
-				},
-				outDir: 'dist',
-				src: [ '<%= all %>' ]
+				outDir: 'dist-loader-tmp',
+				src: [ 'src/loader.ts', 'typings/tsd.d.ts' ]
 			},
 			tests: {
 				options: {
@@ -189,7 +178,11 @@ module.exports = function (grunt) {
 		grunt.log.writeln('Moved ' + this.files.length + ' files');
 	});
 
-	grunt.registerTask('_process-build', [
+	grunt.registerTask('build', [
+		'ts:loader',
+		'ts:dojo',
+		'copy:loader',
+		'clean:loaderTmp',
 		'copy:typings',
 		'copy:sourceForDebugging',
 		'copy:staticFiles',
@@ -197,24 +190,7 @@ module.exports = function (grunt) {
 		'rename:sourceMaps',
 		'dts:dojo'
 	]);
-	grunt.registerTask('build-cjs', [
-		'clean:cjs',
-		'ts:cjs',
-		'_process-build',
-		'rename:cjs'
-	]);
-	grunt.registerTask('build-amd', [
-		'clean:amd',
-		'ts:amdLoader',
-		'ts:amd',
-		'_process-build',
-		'rename:amd'
-	]);
-	grunt.registerTask('build', [
-		'build-cjs',
-		'build-amd'
-	]);
 	grunt.registerTask('test', [ 'ts:tests', 'intern:client' ]);
-	grunt.registerTask('ci', [ 'tslint', 'build-amd', 'test' ]);
+	grunt.registerTask('ci', [ 'tslint', 'build', 'test' ]);
 	grunt.registerTask('default', [ 'clean', 'build' ]);
 };

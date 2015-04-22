@@ -42,12 +42,12 @@ if (!has) {
 }
 
 has.normalize = function (resourceId: string, normalize: (moduleId: string) => string): string {
-	var tokens = resourceId.match(/[\?: ]|[^: \?]*/g);
+	var tokens = resourceId.match(/[\?:]|[^:\?]*/g);
 
 	var i = 0;
 	function get(skip?: boolean): string {
 		var term = tokens[i++];
-		if (term === ': ') {
+		if (term === ':') {
 			// empty string module name, resolves to 0
 			return null;
 		}

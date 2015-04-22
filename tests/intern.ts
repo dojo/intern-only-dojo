@@ -46,7 +46,7 @@ var internConfig = {
 	loader: {
 		// Packages that should be registered with the loader in each testing environment
 		packages: [
-			{ name: 'src', location: 'dist-amd' },
+			{ name: 'src', location: 'dist' },
 			{ name: 'tests', location: 'tests' }
 		]
 	},

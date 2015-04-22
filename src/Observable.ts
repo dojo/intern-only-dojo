@@ -82,7 +82,9 @@ class Observable implements core.IObservable {
 		return lang.isEqual(a, b);
 	}
 
+	/* tslint:disable:no-unused-variable */
 	private _notify<T>(property: string, newValue: T, oldValue: T): void {
+	/* tslint:enable:no-unused-variable */
 		var callbacks = this._callbacks[property];
 		if (!callbacks || !callbacks.length) {
 			return;
@@ -123,7 +125,7 @@ class Observable implements core.IObservable {
 				descriptor.get = oldDescriptor.get;
 
 				if (oldDescriptor.set) {
-					descriptor.set = (value: any) => {
+					descriptor.set = function (value: any) {
 						oldDescriptor.set.apply(this, arguments);
 						var newValue = descriptor.get.call(this);
 
@@ -138,7 +140,7 @@ class Observable implements core.IObservable {
 					return currentValue;
 				};
 				if (oldDescriptor.writable) {
-					descriptor.set = (newValue: any) => {
+					descriptor.set = function (newValue: any) {
 						this._notify(property, newValue, currentValue);
 						currentValue = newValue;
 					};

@@ -32,7 +32,7 @@ function xhr(url: string, options: xhr.IRequestOptions = {}): Promise<xhr.IRespo
 
 	if ((!options.user || !options.password) && options.auth) {
 		(function (): void {
-			var auth: string[] = options.auth.split(': ');
+			var auth: string[] = options.auth.split(':');
 			options.user = decodeURIComponent(auth[0]);
 			options.password = decodeURIComponent(auth[1]);
 		})();

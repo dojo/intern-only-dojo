@@ -56,7 +56,7 @@ export function key(index: number): string {
 }
 
 export function getItem(key: string): string {
-	var match = new RegExp('(?: ^|; )' + string.escapeRegExpString(encodeURIComponent(key)) + '=([^;]*)').exec(document.cookie);
+	var match = new RegExp('(?:^|; )' + string.escapeRegExpString(encodeURIComponent(key)) + '=([^;]*)').exec(document.cookie);
 	return match ? decodeURIComponent(match[1]) : null;
 }
 

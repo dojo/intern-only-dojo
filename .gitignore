@@ -6,5 +6,4 @@ dist
 dist-amd
 dist-cjs
 node_modules
-!src/node.js
 !/Gruntfile.js

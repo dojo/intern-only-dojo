@@ -58,7 +58,7 @@ export interface ITransform {
 	(value: any, key?: string): any;
 }
 
-var substitutePattern = /\$\{([^\s\: \}]+)(?: \: ([^\s\: \}]+))?\}/g;
+var substitutePattern = /\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g;
 function defaultTransform(value: any): any {
 	return value;
 };

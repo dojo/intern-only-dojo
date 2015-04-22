@@ -113,11 +113,11 @@ function node(url: string, options: node.INodeRequestOptions = {}): Promise<requ
 	}
 
 	if (!options.auth && (options.user || options.password)) {
-		requestOptions.auth = encodeURIComponent(options.user || '') + ': ' + encodeURIComponent(options.password || '');
+		requestOptions.auth = encodeURIComponent(options.user || '') + ':' + encodeURIComponent(options.password || '');
 	}
 
 	// TODO: Cast to `any` prevents TS2226 error
-	var request: http.ClientRequest = (parsedUrl.protocol === 'https: ' ? <any> https : http).request(requestOptions);
+	var request: http.ClientRequest = (parsedUrl.protocol === 'https:' ? <any> https : http).request(requestOptions);
 	var response: request.IResponse = {
 		data: null,
 		getHeader: function (name: string): string {
@@ -153,13 +153,22 @@ function node(url: string, options: node.INodeRequestOptions = {}): Promise<requ
 
 		// Redirection handling defaults to true in order to harmonise with the XHR provider, which will always
 		// follow redirects
-		// TODO: This redirect code is not 100% correct according to the RFC; needs to handle redirect loops and
-		// restrict/modify certain redirects
+		// TODO: This redirect code is not 100% correct according to the RFC; needs to handle redirect loops
+		// A -> B -> A and restrict/modify certain redirects
 		if (
 			response.statusCode >= 300 && response.statusCode < 400 && response.statusCode !== 304 &&
 			options.followRedirects !== false &&
 			nativeResponse.headers.location
 		) {
+			if (
+				nativeResponse.headers.location === url &&
+				// 303 asks the UA to convert method to GET so is only a loop if the method was already GET
+				(response.statusCode !== 303 || requestOptions.method === 'GET')
+			) {
+				deferred.reject(new Error('Redirect loop detected for URL ' + url));
+				return;
+			}
+
 			deferred.progress({
 				type: 'redirect',
 				location: nativeResponse.headers.location,
