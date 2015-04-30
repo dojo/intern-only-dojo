@@ -970,7 +970,7 @@ export interface IRootRequire extends IRequire {
 
 		if (has('loader-ie9-compat')) {
 			for (var i = document.scripts.length - 1, script: HTMLScriptElement; (script = <HTMLScriptElement> document.scripts[i]); --i) {
-				if (script.readyState === 'interactive') {
+				if ((<any> script).readyState === 'interactive') {
 					(<any> script).defArgs = [ deps, factory ];
 					break;
 				}
