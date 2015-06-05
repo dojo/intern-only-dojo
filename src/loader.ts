@@ -952,9 +952,13 @@ export interface IRootRequire extends IRequire {
 			deps = <any> factory;
 			factory = arguments[2];
 
-			var module: IModule = getModule(id);
-			module.injected = true;
-			defineModule(module, deps, factory);
+			// Some modules in the wild have an explicit module ID that is null; ignore the module ID in this case and
+			// register normally using the request module ID
+			if (id != null) {
+				var module: IModule = getModule(id);
+				module.injected = true;
+				defineModule(module, deps, factory);
+			}
 		}
 
 		if (arguments.length === 1) {
