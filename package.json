@@ -1,6 +1,6 @@
 {
   "name": "dojo",
-  "version": "2.0.0-alpha.6",
+  "version": "2.0.0-pre",
   "description": "Dojo 2 core. The Dojo 2 core library provides TypeScript & JavaScript authors with a complete set of tools for developing well-structured, highly maintainable applications.",
   "homepage": "http://dojotoolkit.org",
   "bugs": {
