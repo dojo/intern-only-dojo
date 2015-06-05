@@ -12,9 +12,16 @@ function noop(): void {}
 
 var nextTick: (callback: () => void) => core.IHandle;
 
-// Node.JS 0.10 added `setImmediate` and then started throwing warnings when people called `nextTick` recursively;
-// Node.JS 0.11 supposedly removes this behaviour, so only target 0.10
-if (has('host-node') && typeof setImmediate !== 'undefined' && process.version.indexOf('v0.10.') === 0) {
+// Despite claims that setImmediate is broken in IE because it can be blocked forever by the renderer, MutationObserver
+// in IE11 seems to work even less reliably when it is used by Intern via WebDriver. In this case, mutations do not
+// always trigger a queue drain, which causes very slow/never-completing tests. setImmediate does always work in this
+// case
+if (
+	typeof setImmediate !== 'undefined' &&
+	// Node.JS 0.10 added `setImmediate` and then started throwing warnings when people called `nextTick` recursively;
+	// Node.JS 0.11 removes this behaviour, so use setImmediate for 0.10 and nextTick for the rest
+	(!has('host-node') || (has('host-node') && process.version.indexOf('v0.10.') === 0))
+) {
 	nextTick = function (callback: () => void): core.IHandle {
 		var timer = setImmediate(callback);
 		return {
