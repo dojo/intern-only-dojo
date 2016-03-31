@@ -57,15 +57,6 @@ module node {
 	}
 }
 
-function normalizeHeaders(headers: { [name: string]: string; }): { [name: string]: string; } {
-	var normalizedHeaders: { [name: string]: string; } = {};
-	for (var key in headers) {
-		normalizedHeaders[key.toLowerCase()] = headers[key];
-	}
-
-	return normalizedHeaders;
-}
-
 function node(url: string, options: node.INodeRequestOptions = {}): Promise<request.IResponse> {
 	var deferred: Promise.Deferred<request.IResponse> = new Promise.Deferred(function (reason: Error): void {
 		request && request.abort();
@@ -80,7 +71,7 @@ function node(url: string, options: node.INodeRequestOptions = {}): Promise<requ
 		ca: options.ca,
 		cert: options.cert,
 		ciphers: options.ciphers,
-		headers: normalizeHeaders(options.headers || {}),
+		headers: options.headers || {},
 		host: parsedUrl.host,
 		hostname: parsedUrl.hostname,
 		key: options.key,

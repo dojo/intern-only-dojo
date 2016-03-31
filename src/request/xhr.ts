@@ -49,7 +49,8 @@ function xhr(url: string, options: xhr.IRequestOptions = {}): Promise<xhr.IRespo
 			response.data = request.responseXML;
 		}
 		else {
-			response.data = request.response;
+			// At least IE 9 doesn't provide a 'response' property on request, so fallback to responseText
+			response.data = ('response' in request) ? request.response : request.responseText;
 		}
 
 		response.statusCode = request.status;
