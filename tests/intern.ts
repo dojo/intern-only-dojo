@@ -36,14 +36,14 @@ var internConfig = {
 
 	// The desired AMD loader to use when running unit tests (client.html/client.js). Omit to use the default Dojo
 	// loader
-	useLoader: {
-		'host-node': 'dojo/dojo',
-		'host-browser': 'node_modules/dojo/dojo.js'
+	loaders: {
+		'host-node': 'dojo/loader',
+		'host-browser': 'node_modules/dojo/loader.js'
 	},
 
 	// Configuration options for the module loader; any AMD configuration options supported by the specified AMD loader
 	// can be used here
-	loader: {
+	loaderOptions: {
 		// Packages that should be registered with the loader in each testing environment
 		packages: [
 			{ name: 'src', location: 'dist' },
