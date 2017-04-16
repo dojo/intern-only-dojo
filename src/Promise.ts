@@ -3,7 +3,7 @@ import nextTick = require('./nextTick');
 type Callback = (...args: any[]) => void;
 
 function isPromise(value: any): boolean {
-	return value && typeof value.then === 'function';
+	return value ? typeof value.then === 'function' : false;
 }
 
 function runCallbacks(callbacks: Array<Callback>, ...args: any[]): void {
