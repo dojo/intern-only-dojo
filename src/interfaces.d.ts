@@ -47,3 +47,10 @@ export interface IObservableArray<T> {
 export interface IObserver<T> {
 	(newValue: T, oldValue: T): void;
 }
+
+export interface IWeakMap<K, V> {
+	delete(key: K): void;
+	get(key: K): V;
+	has(key: K): boolean;
+	set(key: K, value: V): IWeakMap<K, V>;
+}

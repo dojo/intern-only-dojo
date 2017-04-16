@@ -18,6 +18,7 @@
         "./unit/DateObject.ts",
         "./unit/Observable.ts",
         "./unit/Promise.ts",
+        "./unit/WeakMap.ts",
         "./unit/all.ts",
         "./unit/lang.ts",
         "./unit/nextTick.ts",

@@ -293,5 +293,14 @@ registerSuite({
 		assert.ok(!Object.getOwnPropertyDescriptor(object, 'foo'));
 		assert.ok(descriptor);
 		assert.deepEqual(descriptor, expected);
+	},
+
+	'.getUID': function () {
+		var value1 = lang.getUID(),
+			value2 = lang.getUID();
+
+		assert.isNumber(value1);
+		assert.isNumber(value2);
+		assert.notStrictEqual(value1, value2);
 	}
 });

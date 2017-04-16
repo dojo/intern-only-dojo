@@ -177,3 +177,7 @@ export function pullFromArray<T>(haystack: T[], needle: T): T[] {
 
 	return removed;
 }
+
+export function getUID(): number {
+	return Math.floor(Math.random() * 100000000);
+}

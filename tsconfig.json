@@ -21,6 +21,7 @@
         "./src/Promise.ts",
         "./src/Registry.ts",
         "./src/Scheduler.ts",
+        "./src/WeakMap.ts",
         "./src/aspect.ts",
         "./src/cookie.ts",
         "./src/dom.ts",
